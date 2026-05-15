@@ -1,29 +1,43 @@
 import { BrowserWindow } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import electronUpdater from 'electron-updater';
+const { autoUpdater } = electronUpdater;
 import { childLogger } from '@main/logging/logger';
 import { IPC } from '@shared/ipc-channels';
 import type { UpdaterStatus } from '@shared/types';
 
 const log = () => childLogger({ mod: 'updater' });
 
-export function initUpdater(getWindow: () => BrowserWindow | null, opts: { feedUrl?: string; channel?: string }): void {
+export function initUpdater(
+  getWindow: () => BrowserWindow | null,
+  opts: { feedUrl?: string; channel?: string },
+): void {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
   if (opts.channel) autoUpdater.channel = opts.channel;
   if (opts.feedUrl) {
-    autoUpdater.setFeedURL({ provider: 'generic', url: opts.feedUrl, channel: opts.channel ?? 'stable' });
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: opts.feedUrl,
+      channel: opts.channel ?? 'stable',
+    });
   }
 
   autoUpdater.on('checking-for-update', () => emit(getWindow, { kind: 'checking' }));
   autoUpdater.on('update-available', (info) =>
-    emit(getWindow, { kind: 'available', info: { version: info.version, releaseDate: info.releaseDate } }),
+    emit(getWindow, {
+      kind: 'available',
+      info: { version: info.version, releaseDate: info.releaseDate },
+    }),
   );
   autoUpdater.on('update-not-available', () => emit(getWindow, { kind: 'not-available' }));
   autoUpdater.on('download-progress', (p) =>
     emit(getWindow, { kind: 'downloading', progressPercent: p.percent }),
   );
   autoUpdater.on('update-downloaded', (info) =>
-    emit(getWindow, { kind: 'downloaded', info: { version: info.version, releaseDate: info.releaseDate } }),
+    emit(getWindow, {
+      kind: 'downloaded',
+      info: { version: info.version, releaseDate: info.releaseDate },
+    }),
   );
   autoUpdater.on('error', (err) => {
     log().error({ err: err.message }, 'updater error');

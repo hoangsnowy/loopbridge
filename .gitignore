@@ -1,0 +1,36 @@
+node_modules/
+out/
+dist/
+release/
+build/output/
+
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+.env
+.env.local
+.env.*.local
+
+.vscode/
+.idea/
+.claude/
+
+coverage/
+.nyc_output/
+
+# Electron-builder artifacts
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.snap
+*.blockmap
+latest*.yml
+
+# Local SQLite copies dropped in repo by accident
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

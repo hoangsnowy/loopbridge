@@ -1,0 +1,4 @@
+provider: generic
+url: https://example.invalid/loopbridge-updates/
+channel: stable
+updaterCacheDirName: loopbridge-updater

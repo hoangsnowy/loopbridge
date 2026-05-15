@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: typecheck + test + build
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies (no native compile)
+        run: npm install --ignore-scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck (main + preload + shared)
+        run: npm run typecheck:node
+
+      - name: Typecheck (renderer)
+        run: npm run typecheck:web
+
+      - name: Unit tests
+        run: npm test
+
+      - name: electron-vite build
+        run: npm run build
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loopbridge-bundles-${{ github.sha }}
+          path: out/
+          retention-days: 7

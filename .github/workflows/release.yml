@@ -1,0 +1,148 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: Build + sign Windows installer
+    runs-on: windows-latest
+    outputs:
+      installer-name: ${{ steps.locate.outputs.installer }}
+      installer-sha256: ${{ steps.locate.outputs.sha256 }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install deps (with native rebuild)
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint -- --max-warnings 0
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build bundles
+        run: npm run build
+
+      - name: Generate SBOM (CycloneDX)
+        run: npx --yes @cyclonedx/cdxgen@latest -o sbom.cdx.json --spec-version 1.5
+
+      - name: Package Windows installer (NSIS + MSI, unsigned)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win nsis msi --publish never
+
+      # Code signing — pick one path by setting the right secret(s).
+      # Without any, the build ships unsigned (SmartScreen will warn on first run).
+      #
+      # Path 1: SSL.com / Sectigo / DigiCert cloud HSM with a .pfx-style flow.
+      #   Set CSC_LINK (base64 of cert) + CSC_KEY_PASSWORD.
+      #   electron-builder picks them up automatically; no extra step.
+      #
+      # Path 2: Azure Key Vault (only if you happen to have it).
+      #   Uncomment the block below and set AZURE_* + KV_CERT_NAME secrets.
+      #
+      # - name: Sign installer (Azure Key Vault HSM)
+      #   if: ${{ env.AZURE_KEY_VAULT_URI != '' }}
+      #   env:
+      #     AZURE_KEY_VAULT_URI: ${{ secrets.AZURE_KEY_VAULT_URI }}
+      #     AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      #     AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      #     AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      #     KV_CERT_NAME: ${{ secrets.KV_CERT_NAME }}
+      #   shell: pwsh
+      #   run: |
+      #     dotnet tool install --global AzureSignTool
+      #     Get-ChildItem release -Recurse -Include *.exe,*.msi | ForEach-Object {
+      #       AzureSignTool sign -kvu $env:AZURE_KEY_VAULT_URI `
+      #         -kvi $env:AZURE_CLIENT_ID -kvt $env:AZURE_TENANT_ID `
+      #         -kvs $env:AZURE_CLIENT_SECRET -kvc $env:KV_CERT_NAME `
+      #         -tr http://timestamp.digicert.com -td sha256 -fd sha256 -v $_.FullName
+      #     }
+
+      - name: Locate installer + compute SHA256
+        id: locate
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem release -Recurse -Filter "*-setup.exe" | Select-Object -First 1
+          $sha = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash
+          "installer=$($installer.FullName)" >> $env:GITHUB_OUTPUT
+          "sha256=$sha" >> $env:GITHUB_OUTPUT
+          Write-Host "Installer: $($installer.FullName)"
+          Write-Host "SHA256: $sha"
+
+      - name: Generate SLSA build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            release/**/*.exe
+            release/**/*.msi
+            release/**/latest*.yml
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: loopbridge-windows-${{ github.ref_name }}
+          path: |
+            release/**/*.exe
+            release/**/*.msi
+            release/**/*.blockmap
+            release/**/latest*.yml
+            sbom.cdx.json
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Create draft GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: loopbridge ${{ github.ref_name }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            release/**/*.exe
+            release/**/*.msi
+            release/**/*.blockmap
+            release/**/latest*.yml
+            sbom.cdx.json
+          fail_on_unmatched_files: true
+
+  # Optional: republish the installer to a self-hosted update feed
+  # (so electron-updater clients can pick up automatic updates).
+  #
+  # Default flow: just use the GitHub Release as the feed —
+  # set the app's feedUrl to `https://github.com/<user>/loopbridge/releases/latest/download/`
+  # and electron-updater handles the rest. No extra job needed.
+  #
+  # If your feed is a private file share / S3 / nginx, swap this step
+  # for whatever transport applies. Examples are intentionally minimal.
+  #
+  # publish-feed:
+  #   name: Publish to update feed
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/download-artifact@v4
+  #       with:
+  #         name: loopbridge-windows-${{ github.ref_name }}
+  #         path: artifacts
+  #     # rsync / scp / aws s3 cp / smbclient / etc.

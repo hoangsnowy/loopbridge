@@ -1,0 +1,9 @@
+* @hoangsnowy
+
+# Sensitive areas — require explicit review.
+/src/main/confluence/        @hoangsnowy
+/src/main/store/secrets.ts   @hoangsnowy
+/src/main/converter/         @hoangsnowy
+/electron-builder.yml        @hoangsnowy
+/.github/                    @hoangsnowy
+/SECURITY.md                 @hoangsnowy

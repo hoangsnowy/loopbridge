@@ -1,74 +1,76 @@
 version: 2
-
 updates:
-  #
-  # NuGet / .NET
-  #
-  - package-ecosystem: "nuget"
-    directory: "/"
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "03:00"
-
+      interval: weekly
+      day: monday
+      time: '04:00'
+      timezone: Etc/UTC
     open-pull-requests-limit: 10
-
+    versioning-strategy: increase
+    commit-message:
+      prefix: chore
+      prefix-development: chore
+      include: scope
     labels:
-      - "dependencies"
-      - "dotnet"
-
+      - dependencies
     groups:
-      dotnet-packages:
+      electron:
         patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
+          - electron
+          - electron-builder
+          - electron-vite
+          - electron-store
+          - electron-updater
+          - electron-log
+          - '@electron-toolkit/*'
+      radix:
+        patterns:
+          - '@radix-ui/*'
+      eslint:
+        patterns:
+          - eslint
+          - '@typescript-eslint/*'
+          - 'eslint-plugin-*'
+          - 'eslint-config-*'
+      react:
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+          - react-router-dom
+      vite:
+        patterns:
+          - vite
+          - vitest
+          - '@vitejs/*'
+      tailwind:
+        patterns:
+          - tailwindcss
+          - '@tailwindcss/*'
+          - tailwind-merge
+          - tailwindcss-animate
+          - autoprefixer
+          - postcss
+      types:
+        patterns:
+          - '@types/*'
+        exclude-patterns:
+          - '@types/react'
+          - '@types/react-dom'
+      tanstack:
+        patterns:
+          - '@tanstack/*'
 
-    ignore:
-      # Major updates review manually
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
-
-  #
-  # GitHub Actions
-  #
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
-
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: ci
     labels:
-      - "dependencies"
-      - "github-actions"
-
-    groups:
-      github-actions:
-        patterns:
-          - "*"
-
-  #
-  # npm / frontend
-  #
-  - package-ecosystem: "npm"
-    directory: "/src/FlowOS.Web"
-    schedule:
-      interval: "weekly"
-
-    labels:
-      - "dependencies"
-      - "frontend"
-
-    groups:
-      frontend:
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "patch"
-
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
+      - dependencies
+      - github-actions

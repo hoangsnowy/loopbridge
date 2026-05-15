@@ -14,10 +14,14 @@ const DcAuthSchema = z.object({
 
 const CloudAuthSchema = z.object({
   backend: z.literal('cloud'),
-  baseUrl: baseUrlNoSlash.refine(
-    (u) => u.includes('.atlassian.net'),
-    'Cloud baseUrl must be on atlassian.net',
-  ),
+  baseUrl: baseUrlNoSlash.refine((u) => {
+    try {
+      const host = new URL(u).hostname.toLowerCase();
+      return host === 'atlassian.net' || host.endsWith('.atlassian.net');
+    } catch {
+      return false;
+    }
+  }, 'Cloud baseUrl host must be atlassian.net'),
   email: z.string().email(),
 });
 

@@ -1,4 +1,7 @@
 import { clipboard } from 'electron';
+import sanitizeHtml from 'sanitize-html';
+
+const NBSP = String.fromCharCode(0xa0);
 
 export interface ClipboardPayload {
   html: string;
@@ -6,26 +9,23 @@ export interface ClipboardPayload {
 }
 
 export function writeRichToClipboard(payload: ClipboardPayload): void {
-  const plain = payload.plainText ?? stripHtml(payload.html);
+  const plain = payload.plainText ?? htmlToPlain(payload.html);
   clipboard.write({
     text: plain,
     html: payload.html,
   });
 }
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<\/(p|div|li|h[1-6]|tr|br)>/gi, '\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+function htmlToPlain(html: string): string {
+  const text = sanitizeHtml(html, {
+    allowedTags: [],
+    allowedAttributes: {},
+    disallowedTagsMode: 'discard',
+  });
+  return text
+    .split(NBSP)
+    .join(' ')
+    .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }

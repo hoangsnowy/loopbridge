@@ -37,7 +37,7 @@ jobs:
           osv-scanner --version
 
       - name: OSV-Scanner against SBOM
-        run: osv-scanner scan source --sbom=sbom.cdx.json --skip-git ./
+        run: osv-scanner --sbom=sbom.cdx.json
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4

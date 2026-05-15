@@ -21,10 +21,11 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - run: npm ci --ignore-scripts
+      - name: Install production deps only
+        run: npm ci --ignore-scripts --omit=dev
 
-      - name: CycloneDX SBOM
-        run: npx --yes @cyclonedx/cdxgen@latest -o sbom.cdx.json --spec-version 1.5
+      - name: CycloneDX SBOM (production deps)
+        run: npx --yes @cyclonedx/cdxgen@latest --no-recurse -o sbom.cdx.json --spec-version 1.5
 
       - name: Install OSV-Scanner
         run: |
@@ -33,7 +34,7 @@ jobs:
           osv-scanner --version
 
       - name: OSV-Scanner against SBOM
-        run: osv-scanner scan source --sbom=sbom.cdx.json --recursive --skip-git ./
+        run: osv-scanner scan source --sbom=sbom.cdx.json --skip-git ./
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4

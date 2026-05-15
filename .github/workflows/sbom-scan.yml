@@ -22,7 +22,10 @@ jobs:
           cache: 'npm'
 
       - name: Install production deps only
-        run: npm ci --ignore-scripts --omit=dev
+        # `npm install` instead of `npm ci` because the lockfile is generated
+        # on Windows and does not include Linux-only optional packages such as
+        # @emnapi/* that the ubuntu-latest runner needs.
+        run: npm install --ignore-scripts --omit=dev --no-audit --no-fund
 
       - name: CycloneDX SBOM (production deps)
         run: npx --yes @cyclonedx/cdxgen@latest --no-recurse -o sbom.cdx.json --spec-version 1.5

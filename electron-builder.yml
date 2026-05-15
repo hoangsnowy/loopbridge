@@ -6,13 +6,13 @@ directories:
 files:
   - out/**
   - package.json
-  - "!**/.DS_Store"
+  - '!**/.DS_Store'
 asarUnpack:
-  - "**/*.node"
+  - '**/*.node'
 extraResources:
   - from: resources
     to: resources
-    filter: ["**/*"]
+    filter: ['**/*']
 win:
   target:
     - target: nsis
@@ -20,9 +20,9 @@ win:
     - target: msi
       arch: [x64]
   artifactName: ${productName}-${version}-setup.${ext}
-  signingHashAlgorithms: [sha256]
   signtoolOptions:
     publisherName: loopbridge
+    signingHashAlgorithms: [sha256]
 nsis:
   oneClick: false
   perMachine: false

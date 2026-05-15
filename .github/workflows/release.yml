@@ -43,8 +43,8 @@ jobs:
       - name: Build bundles
         run: npm run build
 
-      - name: Generate SBOM (CycloneDX)
-        run: npx --yes @cyclonedx/cdxgen@latest -o sbom.cdx.json --spec-version 1.5
+      - name: Generate SBOM (CycloneDX, npm-scoped)
+        run: npx --yes @cyclonedx/cyclonedx-npm@latest --omit dev --output-format JSON --output-file sbom.cdx.json --spec-version 1.5
 
       - name: Package Windows installer (NSIS + MSI, unsigned)
         env:

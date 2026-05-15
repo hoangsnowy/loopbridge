@@ -27,8 +27,11 @@ jobs:
         # @emnapi/* that the ubuntu-latest runner needs.
         run: npm install --ignore-scripts --omit=dev --no-audit --no-fund
 
-      - name: CycloneDX SBOM (production deps)
-        run: npx --yes @cyclonedx/cdxgen@latest --no-recurse -o sbom.cdx.json --spec-version 1.5
+      - name: CycloneDX SBOM (production deps only, lockfile-based)
+        # cyclonedx-npm reads package-lock.json directly and is scoped to
+        # the project, so it does not pollute the SBOM with cdxgen's own
+        # transitive deps the way the more general cdxgen does.
+        run: npx --yes @cyclonedx/cyclonedx-npm@latest --omit dev --output-format JSON --output-file sbom.cdx.json --spec-version 1.5
 
       - name: Install OSV-Scanner
         run: |

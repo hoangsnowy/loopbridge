@@ -1,0 +1,50 @@
+name: SBOM + vuln scan
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 4 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install production deps only
+        # `npm install` instead of `npm ci` because the lockfile is generated
+        # on Windows and does not include Linux-only optional packages such as
+        # @emnapi/* that the ubuntu-latest runner needs.
+        run: npm install --ignore-scripts --omit=dev --no-audit --no-fund
+
+      - name: CycloneDX SBOM (production deps only, lockfile-based)
+        # cyclonedx-npm reads package-lock.json directly and is scoped to
+        # the project, so it does not pollute the SBOM with cdxgen's own
+        # transitive deps the way the more general cdxgen does.
+        run: npx --yes @cyclonedx/cyclonedx-npm@latest --omit dev --output-format JSON --output-file sbom.cdx.json --spec-version 1.5
+
+      - name: Install OSV-Scanner
+        run: |
+          curl -sSfL "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64" -o /usr/local/bin/osv-scanner
+          chmod +x /usr/local/bin/osv-scanner
+          osv-scanner --version
+
+      - name: OSV-Scanner against SBOM
+        run: osv-scanner --sbom=sbom.cdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.cdx.json
+          retention-days: 30

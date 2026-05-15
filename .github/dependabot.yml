@@ -1,0 +1,74 @@
+version: 2
+
+updates:
+  #
+  # NuGet / .NET
+  #
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+
+    open-pull-requests-limit: 10
+
+    labels:
+      - "dependencies"
+      - "dotnet"
+
+    groups:
+      dotnet-packages:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+    ignore:
+      # Major updates review manually
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  #
+  # GitHub Actions
+  #
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  #
+  # npm / frontend
+  #
+  - package-ecosystem: "npm"
+    directory: "/src/FlowOS.Web"
+    schedule:
+      interval: "weekly"
+
+    labels:
+      - "dependencies"
+      - "frontend"
+
+    groups:
+      frontend:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"

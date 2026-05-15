@@ -4,6 +4,9 @@
   "description": "Desktop tool to migrate Confluence pages to Microsoft Loop via clipboard-assisted paste.",
   "main": "./out/main/index.js",
   "license": "MIT",
+  "author": {
+    "name": "loopbridge"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"

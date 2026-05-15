@@ -46,10 +46,10 @@ jobs:
       - name: Generate SBOM (CycloneDX, npm-scoped)
         run: npx --yes @cyclonedx/cyclonedx-npm@latest --omit dev --output-format JSON --output-file sbom.cdx.json --spec-version 1.5
 
-      - name: Package Windows installer (NSIS, unsigned)
+      - name: Package Windows installer (NSIS + MSI, unsigned)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win nsis --publish never
+        run: npx electron-builder --win nsis msi --publish never
 
       # Code signing — pick one path by setting the right secret(s).
       # Without any, the build ships unsigned (SmartScreen will warn on first run).
@@ -95,6 +95,7 @@ jobs:
         with:
           subject-path: |
             release/**/*.exe
+            release/**/*.msi
             release/**/latest*.yml
 
       - name: Upload installer artifact
@@ -103,6 +104,7 @@ jobs:
           name: loopbridge-windows-${{ github.ref_name }}
           path: |
             release/**/*.exe
+            release/**/*.msi
             release/**/*.blockmap
             release/**/latest*.yml
             sbom.cdx.json
@@ -118,6 +120,7 @@ jobs:
           generate_release_notes: true
           files: |
             release/**/*.exe
+            release/**/*.msi
             release/**/*.blockmap
             release/**/latest*.yml
             sbom.cdx.json

@@ -90,7 +90,7 @@ jobs:
           Write-Host "SHA256: $sha"
 
       - name: Generate SLSA build provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             release/**/*.exe
@@ -98,7 +98,7 @@ jobs:
             release/**/latest*.yml
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: loopbridge-windows-${{ github.ref_name }}
           path: |
@@ -158,14 +158,14 @@ jobs:
           echo "SHA256: $sha"
 
       - name: Generate SLSA build provenance
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             release/**/*.AppImage
             release/**/latest-linux*.yml
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: loopbridge-linux-${{ github.ref_name }}
           path: |
@@ -182,13 +182,13 @@ jobs:
 
     steps:
       - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: loopbridge-windows-${{ github.ref_name }}
           path: dist/windows
 
       - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: loopbridge-linux-${{ github.ref_name }}
           path: dist/linux

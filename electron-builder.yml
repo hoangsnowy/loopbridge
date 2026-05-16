@@ -31,14 +31,11 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: loopbridge
-mac:
-  target:
-    - target: dmg
-      arch: [x64, arm64]
-  category: public.app-category.productivity
 linux:
   target: [AppImage]
   category: Utility
+  icon: build/icon.png
+  artifactName: ${productName}-${version}.${ext}
 publish:
   provider: github
   owner: hoangsnowy

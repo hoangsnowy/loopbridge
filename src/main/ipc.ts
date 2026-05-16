@@ -20,16 +20,10 @@ import { createClient } from '@main/confluence/factory';
 import { identityLabel } from '@main/confluence/shared/auth';
 import { writeRichToClipboard } from '@main/clipboard/write';
 import { childLogger, currentLogFile } from '@main/logging/logger';
-import {
-  clearAudit as clearAuditDao,
-  listPagesAudit,
-} from '@main/store/audit';
+import { clearAudit as clearAuditDao, listPagesAudit } from '@main/store/audit';
 import { getConfig, setConfig } from '@main/store/config';
 import { clearSecret, getSecret, setSecret } from '@main/store/secrets';
-import {
-  attachmentLocalPath,
-  readPageCache,
-} from '@main/store/cache';
+import { attachmentLocalPath, readPageCache } from '@main/store/cache';
 import {
   convertPage,
   ensureClient,
@@ -99,7 +93,11 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       const result: ConnectionResult = {
         ok: true,
         backend: input.backend,
-        user: { accountId: user.accountId, displayName: user.displayName, ...(user.email ? { email: user.email } : {}) },
+        user: {
+          accountId: user.accountId,
+          displayName: user.displayName,
+          ...(user.email ? { email: user.email } : {}),
+        },
       };
       if (serverVersion) result.serverVersion = serverVersion;
       return result;
@@ -161,32 +159,35 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     return client.resolveSpace(key);
   });
 
-  handle(IPC.PagesList, async (spaceKeyOrId: string, _opts?: PageListOptions): Promise<PageSummary[]> => {
-    const client = await ensureClient();
-    const cfg = getConfig();
-    if (!cfg.confluence) throw new ConfigError('Not configured');
-    await ensureRun({
-      backend: cfg.confluence.backend,
-      spaceKey: spaceKeyOrId,
-      baseUrl: cfg.confluence.baseUrl,
-    });
-    const win = getWindow();
-    const out: PageSummary[] = [];
-    let fetched = 0;
-    for await (const page of client.listPages(spaceKeyOrId)) {
-      out.push(page);
-      fetched += 1;
-      if (fetched % 25 === 0 && win && !win.isDestroyed()) {
-        const evt: PagesListProgress = { fetched, done: false };
+  handle(
+    IPC.PagesList,
+    async (spaceKeyOrId: string, _opts?: PageListOptions): Promise<PageSummary[]> => {
+      const client = await ensureClient();
+      const cfg = getConfig();
+      if (!cfg.confluence) throw new ConfigError('Not configured');
+      await ensureRun({
+        backend: cfg.confluence.backend,
+        spaceKey: spaceKeyOrId,
+        baseUrl: cfg.confluence.baseUrl,
+      });
+      const win = getWindow();
+      const out: PageSummary[] = [];
+      let fetched = 0;
+      for await (const page of client.listPages(spaceKeyOrId)) {
+        out.push(page);
+        fetched += 1;
+        if (fetched % 25 === 0 && win && !win.isDestroyed()) {
+          const evt: PagesListProgress = { fetched, done: false };
+          win.webContents.send(IPC.EvtPagesListProgress, evt);
+        }
+      }
+      if (win && !win.isDestroyed()) {
+        const evt: PagesListProgress = { fetched, done: true };
         win.webContents.send(IPC.EvtPagesListProgress, evt);
       }
-    }
-    if (win && !win.isDestroyed()) {
-      const evt: PagesListProgress = { fetched, done: true };
-      win.webContents.send(IPC.EvtPagesListProgress, evt);
-    }
-    return out;
-  });
+      return out;
+    },
+  );
 
   handle(IPC.PageGet, async (pageId: string) => {
     await fetchAndCachePage(pageId);
@@ -250,9 +251,29 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   handle(IPC.AuditExportCsv, async (targetPath: string): Promise<void> => {
     const rows = listPagesAudit({});
     const { stringify } = await import('csv-stringify/sync');
+    // Explicit AuditRow column order — keeps CSV header stable even when
+    // `rows` is empty and survives later additions to AuditRow.
+    const COLUMNS: ReadonlyArray<keyof AuditRow> = [
+      'pageId',
+      'spaceKey',
+      'title',
+      'versionNumber',
+      'parentId',
+      'status',
+      'needsReview',
+      'imagesEmbedded',
+      'imagesManual',
+      'fetchedAt',
+      'convertedAt',
+      'copiedAt',
+      'doneAt',
+      'errorKind',
+      'errorMessage',
+      'note',
+    ];
     const out = stringify(rows, {
       header: true,
-      columns: Object.keys(rows[0] ?? { pageId: 1, title: 1 }),
+      columns: COLUMNS as unknown as string[],
     });
     await fs.writeFile(targetPath, out, 'utf8');
   });
@@ -277,7 +298,10 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     if (!file) return [];
     try {
       const text = await fs.readFile(file, 'utf8');
-      const all = text.trim().split('\n').slice(-Math.max(1, lines | 0));
+      const all = text
+        .trim()
+        .split('\n')
+        .slice(-Math.max(1, lines | 0));
       return all
         .map((row) => {
           try {

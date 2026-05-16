@@ -20,7 +20,10 @@ function isRetryable(err: unknown): boolean {
   return false;
 }
 
-function delayForAttempt(attempt: number, opts: Required<Pick<RetryOptions, 'baseMs' | 'maxDelayMs' | 'jitter'>>): number {
+function delayForAttempt(
+  attempt: number,
+  opts: Required<Pick<RetryOptions, 'baseMs' | 'maxDelayMs' | 'jitter'>>,
+): number {
   const exp = Math.min(opts.maxDelayMs, opts.baseMs * 2 ** attempt);
   const jitterAmount = Math.random() * opts.jitter * exp;
   return Math.floor(exp + jitterAmount);
@@ -30,9 +33,7 @@ export async function retry<T>(fn: () => Promise<T>, opts: RetryOptions): Promis
   const merged = { ...DEFAULT_OPTIONS, ...opts };
   let lastErr: unknown;
   for (let attempt = 0; attempt < merged.maxAttempts; attempt++) {
-    if (merged.signal?.aborted) {
-      throw new DOMException('Aborted', 'AbortError');
-    }
+    merged.signal?.throwIfAborted();
     try {
       return await fn();
     } catch (err) {
@@ -45,10 +46,14 @@ export async function retry<T>(fn: () => Promise<T>, opts: RetryOptions): Promis
       merged.onRetry?.({ attempt: attempt + 1, err, delayMs });
       await new Promise<void>((resolve, reject) => {
         const t = setTimeout(resolve, delayMs);
-        merged.signal?.addEventListener('abort', () => {
-          clearTimeout(t);
-          reject(new DOMException('Aborted', 'AbortError'));
-        }, { once: true });
+        merged.signal?.addEventListener(
+          'abort',
+          () => {
+            clearTimeout(t);
+            reject(merged.signal?.reason ?? new DOMException('Aborted', 'AbortError'));
+          },
+          { once: true },
+        );
       });
     }
   }

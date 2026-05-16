@@ -1,5 +1,6 @@
 import type { CheerioAPI } from 'cheerio';
 import type { ConvertContext, ConvertState } from '../types';
+import { escapeAttr, escapeText } from '../utils';
 
 export function applyJira($: CheerioAPI, ctx: ConvertContext, state: ConvertState): void {
   $('ac\\:structured-macro[ac\\:name="jira"]').each((_, el) => {
@@ -14,12 +15,4 @@ export function applyJira($: CheerioAPI, ctx: ConvertContext, state: ConvertStat
       state.needsReview += 1;
     }
   });
-}
-
-function escapeText(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function escapeAttr(s: string): string {
-  return escapeText(s).replace(/"/g, '&quot;');
 }

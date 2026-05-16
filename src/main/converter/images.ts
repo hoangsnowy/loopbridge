@@ -1,5 +1,6 @@
 import type { CheerioAPI } from 'cheerio';
 import type { ConvertContext, ConvertState } from './types';
+import { escapeAttr, escapeText } from './utils';
 
 export async function transformImages(
   $: CheerioAPI,
@@ -61,7 +62,9 @@ export async function transformImages(
       if (data) {
         const mime = att?.mediaType ?? 'image/png';
         const b64 = data.toString('base64');
-        t.el.replaceWith(`<img src="data:${mime};base64,${b64}" alt="${escapeAttr(t.filename)}" />`);
+        t.el.replaceWith(
+          `<img src="data:${mime};base64,${b64}" alt="${escapeAttr(t.filename)}" />`,
+        );
         state.imagesEmbedded += 1;
         state.base64BytesUsed += data.length;
         const entry: import('@shared/types').ImagePlanEntry = {
@@ -76,9 +79,7 @@ export async function transformImages(
       }
     }
 
-    t.el.replaceWith(
-      `<mark>[image: ${escapeText(t.filename)}]</mark>`,
-    );
+    t.el.replaceWith(`<mark>[image: ${escapeText(t.filename)}]</mark>`);
     state.imagesManual += 1;
     if (ctx.needsReviewMarker) state.needsReview += 1;
     const entry: import('@shared/types').ImagePlanEntry = {
@@ -90,15 +91,4 @@ export async function transformImages(
     if (localPath) entry.localPath = localPath;
     state.imagePlan.push(entry);
   }
-}
-
-function escapeText(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function escapeAttr(s: string): string {
-  return escapeText(s).replace(/"/g, '&quot;');
 }

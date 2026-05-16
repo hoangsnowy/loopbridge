@@ -1,4 +1,5 @@
 import type { CheerioAPI } from 'cheerio';
+import { escapeText } from '../utils';
 
 export function applyPanel($: CheerioAPI): void {
   $('ac\\:structured-macro[ac\\:name="panel"]').each((_, el) => {
@@ -8,11 +9,4 @@ export function applyPanel($: CheerioAPI): void {
     const titleHtml = title ? `<p><strong>${escapeText(title)}</strong></p>` : '';
     $m.replaceWith(`<blockquote>${titleHtml}${body}</blockquote>`);
   });
-}
-
-function escapeText(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }

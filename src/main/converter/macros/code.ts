@@ -1,4 +1,5 @@
 import type { CheerioAPI } from 'cheerio';
+import { escapeAttr, escapeText } from '../utils';
 
 export function applyCode($: CheerioAPI): void {
   $('ac\\:structured-macro[ac\\:name="code"]').each((_, el) => {
@@ -9,15 +10,4 @@ export function applyCode($: CheerioAPI): void {
     const langClass = lang ? ` class="language-${escapeAttr(lang)}"` : '';
     $m.replaceWith(`<pre><code${langClass}>${escaped}</code></pre>`);
   });
-}
-
-function escapeText(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function escapeAttr(s: string): string {
-  return escapeText(s).replace(/"/g, '&quot;');
 }

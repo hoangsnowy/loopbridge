@@ -41,7 +41,7 @@ function createWindow(): BrowserWindow {
     return { action: 'deny' };
   });
 
-  const devUrl = process.env['ELECTRON_RENDERER_URL'];
+  const devUrl = process.env.ELECTRON_RENDERER_URL;
   if (devUrl) {
     void window.loadURL(devUrl);
   } else {

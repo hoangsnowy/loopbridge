@@ -48,20 +48,9 @@ Get-FileHash -Algorithm SHA256 loopbridge-X.Y.Z-setup.exe
 
 Compare with the SHA256 published in the Release notes. Optionally verify SLSA provenance with [cosign](https://docs.sigstore.dev/cosign/installation/) — see [SECURITY.md](SECURITY.md) for the exact command.
 
-### Linux
+### Linux / macOS
 
-Download `loopbridge-X.Y.Z.AppImage` from Releases:
-
-```bash
-chmod +x loopbridge-X.Y.Z.AppImage
-./loopbridge-X.Y.Z.AppImage
-```
-
-The OS keychain (`libsecret` / `gnome-keyring`) must be available, or the app will refuse to store credentials. On a headless server this means installing `libsecret-1-0` and running `dbus-launch`.
-
-### macOS
-
-Not currently shipped. The codebase compiles for macOS but ships without one until an Apple Developer certificate is in place (Gatekeeper otherwise blocks unsigned binaries by default).
+Not currently shipped. The codebase compiles for both, but the release pipeline only packages Windows installers right now. Linux AppImage and macOS dmg will return once there's a dev who actually uses each platform daily (and, for macOS, an Apple Developer certificate to sign + notarize).
 
 ## First-run setup
 

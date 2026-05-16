@@ -6,6 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Removed
+
+- **Linux AppImage** dropped from the release pipeline. The `build-linux`
+  job in `release.yml` and the `linux:` block in `electron-builder.yml`
+  are gone; release now ships Windows NSIS + MSI only. Will return when
+  there is a Linux user actively maintaining it.
+
 ## [0.2.0] — 2026-05-16
 
 Reviewer feedback sweep — bug fixes, security hardening, polish, broader test coverage, CI matrix, full documentation, plus an E2E suite.

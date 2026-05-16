@@ -31,11 +31,6 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: loopbridge
-linux:
-  target: [AppImage]
-  category: Utility
-  icon: build/icon.png
-  artifactName: ${productName}-${version}.${ext}
 publish:
   provider: github
   owner: hoangsnowy

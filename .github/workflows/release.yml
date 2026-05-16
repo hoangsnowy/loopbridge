@@ -110,74 +110,9 @@ jobs:
           retention-days: 90
           if-no-files-found: error
 
-  build-linux:
-    name: Build Linux AppImage
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-
-      - name: Install deps (with native rebuild)
-        run: npm ci
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint -- --max-warnings 0
-
-      - name: Unit tests
-        run: npm test
-
-      - name: Build bundles
-        run: npm run build
-
-      - name: Generate SBOM (CycloneDX, npm-scoped)
-        run: npx --yes @cyclonedx/cyclonedx-npm@latest --omit dev --output-format JSON --output-file sbom.cdx.json --spec-version 1.5
-
-      - name: Rebuild native deps for Electron
-        run: npx electron-builder install-app-deps
-
-      - name: Package Linux AppImage (unsigned)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --linux AppImage --publish never
-
-      - name: Compute SHA256 for AppImage
-        run: |
-          installer=$(find release -type f -name "*.AppImage" | head -1)
-          sha=$(sha256sum "$installer" | awk '{print $1}')
-          echo "Installer: $installer"
-          echo "SHA256: $sha"
-
-      - name: Generate SLSA build provenance
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-path: |
-            release/**/*.AppImage
-            release/**/latest-linux*.yml
-
-      - name: Upload installer artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: loopbridge-linux-${{ github.ref_name }}
-          path: |
-            release/**/*.AppImage
-            release/**/latest-linux*.yml
-            sbom.cdx.json
-          retention-days: 90
-          if-no-files-found: error
-
   release:
     name: Publish draft GitHub Release
-    needs: [build-windows, build-linux]
+    needs: [build-windows]
     runs-on: ubuntu-latest
 
     steps:
@@ -186,12 +121,6 @@ jobs:
         with:
           name: loopbridge-windows-${{ github.ref_name }}
           path: dist/windows
-
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: loopbridge-linux-${{ github.ref_name }}
-          path: dist/linux
 
       - name: List downloaded files
         run: find dist -type f | sort
@@ -208,7 +137,5 @@ jobs:
             dist/windows/**/*.msi
             dist/windows/**/*.blockmap
             dist/windows/**/latest*.yml
-            dist/linux/**/*.AppImage
-            dist/linux/**/latest-linux*.yml
             dist/windows/sbom.cdx.json
           fail_on_unmatched_files: true

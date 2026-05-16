@@ -106,12 +106,13 @@ const { autoUpdater } = electronUpdater;
 
 1. Land changes on `main` via PR (matrix CI must be green).
 2. Tag: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
-3. `release.yml` builds Windows NSIS+MSI + Linux AppImage in parallel jobs, attests SLSA provenance, creates a **draft** GitHub Release with all installers.
+3. `release.yml` builds the Windows NSIS+MSI installer, attests SLSA provenance, then a separate release job downloads the artifact and creates a **draft** GitHub Release.
 4. Review draft, click Publish in GitHub UI when ready.
 5. `electron-updater` (provider: github) picks it up automatically on next app launch.
 
 ## Out of scope (deliberate)
 
 - macOS build — no Apple Dev cert.
+- Linux AppImage — dropped from the release pipeline; will return when a Linux user picks it up.
 - Windows code signing — Sectigo / DigiCert / Azure KV workflow already wired in `release.yml`, just needs the cert secret(s).
 - Self-hosted update feed — using GitHub Releases as the feed.

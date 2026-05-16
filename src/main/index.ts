@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): BrowserWindow {
-  const preloadPath = path.join(__dirname, '../preload/index.mjs');
+  const preloadPath = path.join(__dirname, '../preload/index.js');
   const window = new BrowserWindow({
     width: 1280,
     height: 800,

@@ -27,6 +27,13 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: resolve('src/preload/index.ts'),
+        // Electron's sandboxed renderer (webPreferences.sandbox = true)
+        // can ONLY load CommonJS preload scripts. ESM (.mjs) preloads
+        // silently fail to load, leaving window.api undefined.
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js',
+        },
       },
     },
   },

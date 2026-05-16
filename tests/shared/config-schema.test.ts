@@ -41,7 +41,7 @@ describe('config schema', () => {
         baseUrl: 'https://example.com',
         email: 'a@b.com',
       }),
-    ).toThrow(/\batlassian\.net\b/);
+    ).toThrow(/^.*\batlassian\.net\b.*$/);
 
     const ok = ConfluenceConfigSchema.parse({
       backend: 'cloud',

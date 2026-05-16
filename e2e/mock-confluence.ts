@@ -60,6 +60,40 @@ const PAGES = {
   ],
 };
 
+// Page detail with a representative storage body — covers headings, lists,
+// code, info macro, and a table so screenshots show the converter doing real
+// work. Used by /rest/api/content/<id>?...
+function pageDetailResponse(id: string) {
+  return {
+    id,
+    type: 'page',
+    title: id === '1001' ? 'Hello World' : 'Second Page',
+    version: { number: 1, when: '2026-05-16T00:00:00Z' },
+    space: { key: 'DOCS', id: 'DOCS' },
+    ancestors: [],
+    children: { attachment: { results: [] } },
+    body: {
+      storage: {
+        representation: 'storage',
+        value:
+          '<h1>Welcome to loopbridge</h1>' +
+          '<p>This page shows the converter handling <strong>rich content</strong> ' +
+          'including <em>emphasis</em>, <code>inline code</code>, and lists.</p>' +
+          '<ac:structured-macro ac:name="info"><ac:rich-text-body>' +
+          '<p>Loop accepts pasted HTML — loopbridge stages it on the clipboard.</p>' +
+          '</ac:rich-text-body></ac:structured-macro>' +
+          '<h2>Migration steps</h2>' +
+          '<ol><li>Fetch from Confluence</li><li>Convert storage XHTML → clipboard HTML</li>' +
+          '<li>Paste into Loop workspace</li></ol>' +
+          '<ac:structured-macro ac:name="code">' +
+          '<ac:parameter ac:name="language">typescript</ac:parameter>' +
+          '<ac:plain-text-body><![CDATA[const ok = "ship it";]]></ac:plain-text-body>' +
+          '</ac:structured-macro>',
+      },
+    },
+  };
+}
+
 function json(res: http.ServerResponse, status: number, body: unknown): void {
   const text = JSON.stringify(body);
   res.writeHead(status, {
@@ -91,6 +125,19 @@ export async function startMockConfluence(): Promise<{
     // DC: spaces list.
     if (url.startsWith('/rest/api/space')) {
       return json(res, 200, SPACES);
+    }
+
+    // DC: page detail by id, e.g. /rest/api/content/1001?expand=...
+    const detail = url.match(/^\/rest\/api\/content\/(\d+)(\?|$)/);
+    if (detail) {
+      const [, id] = detail;
+      return json(res, 200, pageDetailResponse(id ?? '0'));
+    }
+
+    // DC: attachments list (always empty in screenshots so we don't have to
+    // mock binary download endpoints).
+    if (url.match(/^\/rest\/api\/content\/\d+\/child\/attachment/)) {
+      return json(res, 200, { size: 0, start: 0, limit: 200, results: [] });
     }
 
     // DC: pages list (CQL or content endpoint variants).

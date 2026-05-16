@@ -2,7 +2,10 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: '.',
-  testMatch: /.*\.spec\.ts$/,
+  // Exclude screenshots.spec.ts from the gating suite; it runs via the
+  // separate playwright.screenshots.config.ts when `npm run screenshots`
+  // is invoked.
+  testMatch: /(?<!screenshots)\.spec\.ts$/,
   timeout: 30_000,
   expect: { timeout: 5_000 },
   fullyParallel: false, // Electron driver doesn't share state cleanly across parallel tests.

@@ -35,13 +35,19 @@ describe('config schema', () => {
   });
 
   it('ConfluenceConfigSchema (Cloud) requires *.atlassian.net host', () => {
-    expect(() =>
-      ConfluenceConfigSchema.parse({
-        backend: 'cloud',
-        baseUrl: 'https://example.com',
-        email: 'a@b.com',
-      }),
-    ).toThrow(/^.*\batlassian\.net\b.*$/);
+    expect(
+      () =>
+        ConfluenceConfigSchema.parse({
+          backend: 'cloud',
+          baseUrl: 'https://example.com',
+          email: 'a@b.com',
+        }),
+      // Plain substring match (not regex). The Copilot Autofix that tried
+      // to anchor a regex with /^...$/ broke this — zod error messages are
+      // multi-line JSON dumps that don't match anchored regexes. The plain
+      // string form sidesteps CodeQL's "incomplete URL sanitization" check
+      // since the value is never used as a regex.
+    ).toThrow('atlassian.net');
 
     const ok = ConfluenceConfigSchema.parse({
       backend: 'cloud',

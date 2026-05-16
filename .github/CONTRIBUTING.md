@@ -18,16 +18,18 @@ npm install
 
 ## Daily commands
 
-| Command                  | What it does                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `npm run dev`            | Launch the app in electron-vite dev mode with HMR.                                                      |
-| `npm test`               | Run the vitest suite. Pretest auto-rebuilds better-sqlite3 for Node.                                    |
-| `npm run test:watch`     | Same, but watch mode.                                                                                   |
-| `npm run lint`           | ESLint over `src/` and `tests/`. Zero-warning gate.                                                     |
-| `npm run typecheck`      | Both `tsc -p tsconfig.node.json --noEmit` and the renderer config.                                      |
-| `npm run build`          | Production bundles via electron-vite (no packaging).                                                    |
-| `npm run build:unpacked` | Build + `electron-builder --dir` for a quick smoke test of the packaged app without installer overhead. |
-| `npm run build:win`      | Full Windows NSIS + MSI installer build (Windows host only).                                            |
+| Command                   | What it does                                                                                            |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `npm run dev`             | Launch the app in electron-vite dev mode with HMR.                                                      |
+| `npm test`                | Run the vitest suite. Pretest auto-rebuilds better-sqlite3 for Node.                                    |
+| `npm run test:watch`      | Same, but watch mode.                                                                                   |
+| `npm run test:e2e`        | Playwright + Electron smoke. Pretest forces a better-sqlite3 rebuild against the Electron ABI.          |
+| `npm run test:e2e:headed` | Same as `test:e2e` but with a visible Electron window — for debugging.                                  |
+| `npm run lint`            | ESLint over `src/` and `tests/`. Zero-warning gate.                                                     |
+| `npm run typecheck`       | Both `tsc -p tsconfig.node.json --noEmit` and the renderer config.                                      |
+| `npm run build`           | Production bundles via electron-vite (no packaging).                                                    |
+| `npm run build:unpacked`  | Build + `electron-builder --dir` for a quick smoke test of the packaged app without installer overhead. |
+| `npm run build:win`       | Full Windows NSIS + MSI installer build (Windows host only).                                            |
 
 ## Project layout
 

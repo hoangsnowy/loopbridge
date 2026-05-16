@@ -20,6 +20,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify package.json matches tag
+        shell: pwsh
+        run: |
+          $pkg = (Get-Content package.json | ConvertFrom-Json).version
+          $tag = "${{ github.ref_name }}".TrimStart('v')
+          if ($pkg -ne $tag) {
+            Write-Error "package.json version ($pkg) does not match tag ($tag). Bump package.json before tagging."
+            exit 1
+          }
+          Write-Host "Version check OK: $pkg"
+
       - uses: actions/setup-node@v5
         with:
           node-version-file: '.nvmrc'

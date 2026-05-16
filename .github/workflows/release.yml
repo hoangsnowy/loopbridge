@@ -93,7 +93,7 @@ jobs:
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
-            release/**/*.exe
+            release/**/*-setup.exe
             release/**/*.msi
 
       - name: Upload installer artifact
@@ -101,7 +101,7 @@ jobs:
         with:
           name: loopbridge-windows-${{ github.ref_name }}
           path: |
-            release/**/*.exe
+            release/**/*-setup.exe
             release/**/*.msi
             release/**/*.blockmap
             sbom.cdx.json
@@ -131,7 +131,7 @@ jobs:
           draft: true
           generate_release_notes: true
           files: |
-            dist/windows/**/*.exe
+            dist/windows/**/*-setup.exe
             dist/windows/**/*.msi
             dist/windows/**/*.blockmap
             dist/windows/sbom.cdx.json

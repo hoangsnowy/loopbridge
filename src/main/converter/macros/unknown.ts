@@ -1,5 +1,6 @@
 import type { CheerioAPI } from 'cheerio';
 import type { ConvertContext, ConvertState } from '../types';
+import { escapeText } from '../utils';
 
 export function applyUnknownMacros($: CheerioAPI, ctx: ConvertContext, state: ConvertState): void {
   $('ac\\:structured-macro').each((_, el) => {
@@ -12,8 +13,4 @@ export function applyUnknownMacros($: CheerioAPI, ctx: ConvertContext, state: Co
     $m.replaceWith(`${marker}<!-- needs-review: macro ${escapeText(name)} -->${body}`);
     state.needsReview += 1;
   });
-}
-
-function escapeText(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

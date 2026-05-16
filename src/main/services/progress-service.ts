@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import type { ConfluenceBackend } from '@shared/domain';
 import type { PageStatus } from '@shared/types';
+import { ConfigError } from '@shared/errors';
 import {
   endRun as endRunDao,
   recordEvent as recordEventDao,
@@ -92,7 +93,10 @@ export interface TransitionInput {
 }
 
 export function transition(input: TransitionInput): void {
-  const runId = currentRunId ?? -1;
+  if (currentRunId === undefined) {
+    throw new ConfigError('No active migration run — list pages for a space first to start a run');
+  }
+  const runId = currentRunId;
   const opts: {
     runId: number;
     pageId: string;
@@ -119,7 +123,10 @@ export function recordEvent(input: {
   outcome: 'success' | 'error' | 'retried';
   details?: Record<string, unknown>;
 }): void {
-  const runId = currentRunId ?? -1;
+  if (currentRunId === undefined) {
+    throw new ConfigError('No active migration run — list pages for a space first to start a run');
+  }
+  const runId = currentRunId;
   const opts: {
     runId: number;
     pageId?: string;

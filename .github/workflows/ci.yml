@@ -8,22 +8,29 @@ on:
 
 jobs:
   test:
-    name: typecheck + test + build
-    runs-on: windows-latest
+    name: typecheck + test + build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '20.x'
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install dependencies (no native compile)
+        # --ignore-scripts skips the postinstall Electron rebuild; tests
+        # run against stock Node and rely on `pretest` to rebuild
+        # better-sqlite3 for the Node ABI.
         run: npm install --ignore-scripts
 
       - name: Lint
-        run: npm run lint
+        run: npm run lint -- --max-warnings 0
 
       - name: Typecheck (main + preload + shared)
         run: npm run typecheck:node
@@ -38,8 +45,8 @@ jobs:
         run: npm run build
 
       - name: Upload build artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
+        if: success() && matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v7
         with:
           name: loopbridge-bundles-${{ github.sha }}
           path: out/

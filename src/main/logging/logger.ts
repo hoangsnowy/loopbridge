@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import pino, { type Logger, type Level } from 'pino';
+import pinoRoll from 'pino-roll';
 
 const REDACT_PATHS = [
   'req.headers.authorization',
@@ -19,18 +20,31 @@ let activeLogFile: string | undefined;
 export interface LoggerInit {
   userDataDir: string;
   level: Level;
+  /** Number of rolled log files to keep (oldest deleted). Default 14. */
+  fileRetentionDays?: number;
   consoleInDev?: boolean;
 }
 
-export function initLogger(opts: LoggerInit): Logger {
+export async function initLogger(opts: LoggerInit): Promise<Logger> {
   const logsDir = path.join(opts.userDataDir, 'logs');
   fs.mkdirSync(logsDir, { recursive: true });
 
-  const today = new Date().toISOString().slice(0, 10);
-  const logFile = path.join(logsDir, `loopbridge-${today}.jsonl`);
-  activeLogFile = logFile;
+  const baseFile = path.join(logsDir, 'loopbridge');
+  activeLogFile = `${baseFile}.jsonl`;
 
-  const destination = pino.destination({ dest: logFile, sync: false, mkdir: false });
+  const fileStream = await pinoRoll({
+    file: baseFile,
+    frequency: 'daily',
+    size: '10m',
+    extension: '.jsonl',
+    mkdir: false,
+    limit: { count: opts.fileRetentionDays ?? 14 },
+  });
+
+  const streams: { stream: NodeJS.WritableStream }[] = [{ stream: fileStream }];
+  if (opts.consoleInDev && process.env.NODE_ENV !== 'production') {
+    streams.push({ stream: process.stdout });
+  }
 
   rootLogger = pino(
     {
@@ -39,20 +53,8 @@ export function initLogger(opts: LoggerInit): Logger {
       redact: { paths: REDACT_PATHS, censor: '[REDACTED]' },
       timestamp: pino.stdTimeFunctions.isoTime,
     },
-    destination,
+    pino.multistream(streams),
   );
-
-  if (opts.consoleInDev && process.env.NODE_ENV !== 'production') {
-    rootLogger = pino(
-      {
-        level: opts.level,
-        base: { app: 'loopbridge', pid: process.pid },
-        redact: { paths: REDACT_PATHS, censor: '[REDACTED]' },
-        timestamp: pino.stdTimeFunctions.isoTime,
-      },
-      pino.multistream([{ stream: destination }, { stream: process.stdout }]),
-    );
-  }
 
   return rootLogger;
 }

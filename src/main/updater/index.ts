@@ -7,12 +7,16 @@ import type { UpdaterStatus } from '@shared/types';
 
 const log = () => childLogger({ mod: 'updater' });
 
-export function initUpdater(
-  getWindow: () => BrowserWindow | null,
-  opts: { feedUrl?: string; channel?: string },
-): void {
-  autoUpdater.autoDownload = false;
-  autoUpdater.autoInstallOnAppQuit = true;
+export interface InitUpdaterOptions {
+  feedUrl?: string;
+  channel?: string;
+  autoDownload?: boolean;
+  autoInstallOnQuit?: boolean;
+}
+
+export function initUpdater(getWindow: () => BrowserWindow | null, opts: InitUpdaterOptions): void {
+  autoUpdater.autoDownload = opts.autoDownload ?? false;
+  autoUpdater.autoInstallOnAppQuit = opts.autoInstallOnQuit ?? true;
   if (opts.channel) autoUpdater.channel = opts.channel;
   if (opts.feedUrl) {
     autoUpdater.setFeedURL({

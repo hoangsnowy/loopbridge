@@ -1,5 +1,6 @@
 import type { CheerioAPI } from 'cheerio';
 import type { ConvertContext, ConvertState } from './types';
+import { escapeAttr, escapeText } from './utils';
 
 export function transformLinks($: CheerioAPI, ctx: ConvertContext, state: ConvertState): void {
   $('ac\\:link').each((_, el) => {
@@ -25,7 +26,9 @@ export function transformLinks($: CheerioAPI, ctx: ConvertContext, state: Conver
       if (anchor) href = `${href}#${encodeURIComponent(anchor)}`;
     } else if ($user.length > 0) {
       const ident = $user.attr('ri:account-id') ?? $user.attr('ri:userkey') ?? 'unknown';
-      $link.replaceWith(`<strong>@${escapeText(label || 'unknown-user')}</strong><!-- user: ${escapeText(ident)} -->`);
+      $link.replaceWith(
+        `<strong>@${escapeText(label || 'unknown-user')}</strong><!-- user: ${escapeText(ident)} -->`,
+      );
       state.needsReview += 1;
       return;
     } else if ($att.length > 0) {
@@ -38,15 +41,4 @@ export function transformLinks($: CheerioAPI, ctx: ConvertContext, state: Conver
 
     $link.replaceWith(`<a href="${escapeAttr(href)}">${escapeText(label || href)}</a>`);
   });
-}
-
-function escapeText(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function escapeAttr(s: string): string {
-  return escapeText(s).replace(/"/g, '&quot;');
 }

@@ -15,10 +15,14 @@ Thumbs.db
 
 .vscode/
 .idea/
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 
 coverage/
 .nyc_output/
+test-results/
+playwright-report/
 
 # Electron-builder artifacts
 *.exe

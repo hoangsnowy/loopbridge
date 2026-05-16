@@ -13,13 +13,10 @@ function pageDir(userDataDir: string, pageId: string): string {
   return path.join(userDataDir, 'pages', pageId);
 }
 
-export async function writePageCache(
-  userDataDir: string,
-  entry: PageCacheEntry,
-): Promise<void> {
+export async function writePageCache(userDataDir: string, entry: PageCacheEntry): Promise<void> {
   const dir = pageDir(userDataDir, entry.pageId);
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, 'page.json'), JSON.stringify(entry, null, 2), 'utf8');
+  await fs.writeFile(path.join(dir, 'page.json'), JSON.stringify(entry), 'utf8');
 }
 
 export async function readPageCache(
@@ -61,11 +58,7 @@ export async function readAttachmentBlob(
   }
 }
 
-export function attachmentLocalPath(
-  userDataDir: string,
-  pageId: string,
-  filename: string,
-): string {
+export function attachmentLocalPath(userDataDir: string, pageId: string, filename: string): string {
   return path.join(pageDir(userDataDir, pageId), 'attachments', sanitizeFilename(filename));
 }
 

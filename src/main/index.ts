@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): BrowserWindow {
-  const preloadPath = path.join(__dirname, '../preload/index.mjs');
+  const preloadPath = path.join(__dirname, '../preload/index.js');
   const window = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -41,7 +41,7 @@ function createWindow(): BrowserWindow {
     return { action: 'deny' };
   });
 
-  const devUrl = process.env['ELECTRON_RENDERER_URL'];
+  const devUrl = process.env.ELECTRON_RENDERER_URL;
   if (devUrl) {
     void window.loadURL(devUrl);
   } else {
@@ -68,18 +68,21 @@ async function bootstrap(): Promise<void> {
   await app.whenReady();
 
   const userData = app.getPath('userData');
-  initLogger({
+
+  // Config must load before logger so logger can honour level + retention.
+  initConfigStore();
+  const cfg = getConfig();
+
+  await initLogger({
     userDataDir: userData,
-    level: 'info',
+    level: cfg.logging.level,
+    fileRetentionDays: cfg.logging.fileRetentionDays,
     consoleInDev: !app.isPackaged,
   });
   const log = childLogger({ mod: 'bootstrap' });
   log.info({ userData, packaged: app.isPackaged }, 'app starting');
 
-  initConfigStore();
   initAudit({ userDataDir: userData });
-
-  const cfg = getConfig();
   pruneEventLog(cfg.logging.eventLogRetentionDays);
 
   registerIpc(() => mainWindow);
@@ -87,6 +90,8 @@ async function bootstrap(): Promise<void> {
   initUpdater(() => mainWindow, {
     ...(cfg.updater.feedUrl ? { feedUrl: cfg.updater.feedUrl } : {}),
     channel: cfg.updater.channel,
+    autoDownload: cfg.updater.autoDownload,
+    autoInstallOnQuit: cfg.updater.autoInstallOnQuit,
   });
 
   mainWindow = createWindow();

@@ -55,15 +55,22 @@ CREATE INDEX IF NOT EXISTS idx_state_status ON page_state(status);
 export interface InitAuditOptions {
   userDataDir: string;
   filename?: string;
+  /** Overrides userDataDir+filename. Use ':memory:' for tests. */
+  dbPath?: string;
 }
 
 export function initAudit(opts: InitAuditOptions): Db {
-  const dir = opts.userDataDir;
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, opts.filename ?? 'audit.sqlite');
+  let file: string;
+  if (opts.dbPath) {
+    file = opts.dbPath;
+  } else {
+    fs.mkdirSync(opts.userDataDir, { recursive: true });
+    file = path.join(opts.userDataDir, opts.filename ?? 'audit.sqlite');
+  }
   db = new Database(file);
   db.pragma('journal_mode = WAL');
   db.pragma('busy_timeout = 5000');
+  db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
   return db;
 }
@@ -123,20 +130,19 @@ export interface UpsertPageInput {
 
 export function upsertPage(input: UpsertPageInput): void {
   const d = getAudit();
-  d.prepare(
-    `INSERT INTO page_state (page_id, space_key, title, version_number, parent_id, status)
+  const info = d
+    .prepare(
+      `INSERT INTO page_state (page_id, space_key, title, version_number, parent_id, status)
      VALUES (?, ?, ?, ?, ?, 'pending')
      ON CONFLICT(page_id) DO UPDATE SET
        title = excluded.title,
        version_number = excluded.version_number,
        parent_id = excluded.parent_id`,
-  ).run(
-    input.pageId,
-    input.spaceKey,
-    input.title,
-    input.versionNumber,
-    input.parentId ?? null,
-  );
+    )
+    .run(input.pageId, input.spaceKey, input.title, input.versionNumber, input.parentId ?? null);
+  if (info.changes === 0) {
+    throw new ConfigError(`Failed to upsert page_state row for ${input.pageId}`);
+  }
 }
 
 export interface RecordEventInput {
@@ -229,9 +235,12 @@ export function transitionPage(input: TransitionInput): void {
       sets.push('note = @note');
       params.note = i.patch.note;
     }
-    d.prepare(
-      `UPDATE page_state SET ${sets.join(', ')} WHERE page_id = @pageId`,
-    ).run(params);
+    const upd = d
+      .prepare(`UPDATE page_state SET ${sets.join(', ')} WHERE page_id = @pageId`)
+      .run(params);
+    if (upd.changes === 0) {
+      throw new ConfigError(`Cannot transition unknown page ${i.pageId} — call upsertPage first`);
+    }
     d.prepare(
       `INSERT INTO event_log (run_id, page_id, ts, kind, outcome, details_json)
        VALUES (?, ?, ?, ?, ?, ?)`,

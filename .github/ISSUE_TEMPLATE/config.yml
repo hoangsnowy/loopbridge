@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/hoangsnowy/loopbridge/security/policy
+    about: Do not open a public issue. See SECURITY.md for the disclosure flow.
+  - name: Discussion / question
+    url: https://github.com/hoangsnowy/loopbridge/discussions
+    about: Open-ended questions and ideas go in Discussions, not Issues.

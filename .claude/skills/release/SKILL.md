@@ -15,14 +15,20 @@ End-to-end release flow. The release workflow (`.github/workflows/release.yml`) 
 
 ## Steps
 
-1. Bump `package.json` version field to the new `X.Y.Z` (no `v` prefix in package.json).
+1. Bump `package.json` version field to the new `X.Y.Z` (no `v` prefix in package.json). Then sync `package-lock.json` **minimally** — edit only the two top-level `version` fields (line ~3 and inside `packages[""]`). Do **not** run `npm install` to do this; full resolution has churned the lockfile twice (commits `dd6eeab`, `8780f99`) and broken CI `npm ci`. Verify after with `npm ci --dry-run` — must report "up to date".
+
+   ```bash
+   # quick check the only two lockfile lines that should change:
+   git diff package-lock.json   # expect 2 inserts + 2 deletes, both `"version"`
+   ```
+
 2. Commit with conventional message:
 
    ```
    chore(release): vX.Y.Z
    ```
 
-3. Push the commit, then tag and push the tag:
+3. Push the commit, then tag and push the tag. The `Verify package.json matches tag` step at the top of the release workflow will hard-fail if `package.json.version` !== `tag.slice(1)`, so the bump in step 1 is load-bearing.
 
    ```bash
    git push origin main

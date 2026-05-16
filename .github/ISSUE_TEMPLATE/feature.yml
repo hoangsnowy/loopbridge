@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a new capability or an improvement.
+title: 'feat: '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What can't you do today, or what's painful?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would the UX / API / config look like?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds you've tried, or competing designs.
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / out of scope
+      description: What's explicitly NOT part of this request. Keeps the discussion focused.

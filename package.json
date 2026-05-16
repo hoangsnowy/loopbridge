@@ -5,7 +5,15 @@
   "main": "./out/main/index.js",
   "license": "MIT",
   "author": {
-    "name": "loopbridge"
+    "name": "hoangsnowy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoangsnowy/loopbridge.git"
+  },
+  "homepage": "https://github.com/hoangsnowy/loopbridge",
+  "bugs": {
+    "url": "https://github.com/hoangsnowy/loopbridge/issues"
   },
   "type": "module",
   "engines": {
@@ -45,7 +53,6 @@
     "electron-log": "^5.4.4",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.8.3",
-    "keytar": "^7.9.0",
     "lucide-react": "^1.16.0",
     "pino": "^10.3.1",
     "pino-roll": "^4.0.0",

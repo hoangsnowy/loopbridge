@@ -40,6 +40,8 @@ linux:
   target: [AppImage]
   category: Utility
 publish:
-  provider: generic
-  url: https://example.invalid/loopbridge-updates/
+  provider: github
+  owner: hoangsnowy
+  repo: loopbridge
+  releaseType: release
   channel: stable

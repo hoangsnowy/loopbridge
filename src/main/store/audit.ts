@@ -55,12 +55,18 @@ CREATE INDEX IF NOT EXISTS idx_state_status ON page_state(status);
 export interface InitAuditOptions {
   userDataDir: string;
   filename?: string;
+  /** Overrides userDataDir+filename. Use ':memory:' for tests. */
+  dbPath?: string;
 }
 
 export function initAudit(opts: InitAuditOptions): Db {
-  const dir = opts.userDataDir;
-  fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, opts.filename ?? 'audit.sqlite');
+  let file: string;
+  if (opts.dbPath) {
+    file = opts.dbPath;
+  } else {
+    fs.mkdirSync(opts.userDataDir, { recursive: true });
+    file = path.join(opts.userDataDir, opts.filename ?? 'audit.sqlite');
+  }
   db = new Database(file);
   db.pragma('journal_mode = WAL');
   db.pragma('busy_timeout = 5000');

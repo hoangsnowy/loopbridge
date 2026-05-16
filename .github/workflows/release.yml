@@ -46,6 +46,12 @@ jobs:
       - name: Generate SBOM (CycloneDX, npm-scoped)
         run: npx --yes @cyclonedx/cyclonedx-npm@latest --omit dev --output-format JSON --output-file sbom.cdx.json --spec-version 1.5
 
+      # Native deps were rebuilt for stock Node by `pretest`. Re-rebuild
+      # against Electron's headers before packaging so the shipped binary
+      # loads better-sqlite3 inside Electron.
+      - name: Rebuild native deps for Electron
+        run: npx electron-builder install-app-deps
+
       - name: Package Windows installer (NSIS + MSI, unsigned)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

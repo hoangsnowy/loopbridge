@@ -14,6 +14,7 @@ export const IPC = {
   PageMarkDone: 'pages:mark-done',
   PageMarkSkipped: 'pages:mark-skipped',
   PageReset: 'pages:reset',
+  PageRefetch: 'pages:refetch',
 
   AttachmentsList: 'attachments:list',
   AttachmentDownload: 'attachments:download',
@@ -34,6 +35,8 @@ export const IPC = {
 
   ShellOpenExternal: 'shell:open-external',
   ShellShowItemInFolder: 'shell:show-item-in-folder',
+
+  DialogShowSaveDialog: 'dialog:show-save-dialog',
 
   EvtPagesListProgress: 'evt:pages-list-progress',
   EvtMigrationStatus: 'evt:migration-status',

@@ -30,7 +30,7 @@ Confluence stores rich content as `ac:structured-macro` XHTML. The converter wal
 
    Reuse `escapeText` / `escapeAttr` from `../utils` — never re-define locally.
 
-3. **Wire into the pipeline.** Open `src/main/converter/index.ts`, import the new function, and call it in the macro pass alongside the others. Order matters when one macro nests inside another — usually deeper-first.
+3. **Wire into the pipeline.** Open `src/main/converter/cheerio-pipeline.ts`, import the new function, and call it in `runPipeline()` alongside the other `apply*` calls. Order matters when one macro nests inside another — usually deeper-first. If your macro needs `ctx`/`state` (e.g. to bump `state.needsReview`), make sure both are passed in (the children/toc macros are a small reference).
 
 4. **Add a test.** Append to `tests/converter/converter.test.ts`:
 

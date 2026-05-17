@@ -97,6 +97,22 @@ describe('converter macros — extra fixtures', () => {
     expect(result.html).toContain('Panel without title.');
   });
 
+  it('children macro emits review placeholder and bumps needsReview', async () => {
+    const xhtml = `<p>Before</p><ac:structured-macro ac:name="children"/><p>After</p>`;
+    const result = await convertStorageToHtml(xhtml, baseContext());
+    expect(result.html).toContain('[Child pages');
+    expect(result.html).not.toContain('children macro removed');
+    expect(result.needsReview).toBeGreaterThanOrEqual(1);
+  });
+
+  it('toc macro emits review placeholder and bumps needsReview', async () => {
+    const xhtml = `<ac:structured-macro ac:name="toc"/><h2>Section</h2>`;
+    const result = await convertStorageToHtml(xhtml, baseContext());
+    expect(result.html).toContain('Table of contents');
+    expect(result.html).not.toContain('toc removed');
+    expect(result.needsReview).toBeGreaterThanOrEqual(1);
+  });
+
   it('status macro renders color: title in brackets when color present', async () => {
     const result = await convertStorageToHtml(
       loadFixture('11-status-macro.storage.xhtml'),
@@ -107,18 +123,24 @@ describe('converter macros — extra fixtures', () => {
   });
 
   it('link variants: page, user, attachment, anchor', async () => {
-    const result = await convertStorageToHtml(
-      loadFixture('12-link-variants.storage.xhtml'),
-      baseContext(),
-    );
+    const ctx = baseContext();
+    // Simulate the leak scenario: attachmentLocalPath returns an absolute
+    // userData path. Output must not embed it in the clipboard HTML.
+    ctx.attachmentLocalPath = (f: string) =>
+      `C:\\Users\\someone\\AppData\\Roaming\\loopbridge\\pages\\p1\\${f}`;
+    const result = await convertStorageToHtml(loadFixture('12-link-variants.storage.xhtml'), ctx);
     // Page link → keep-confluence rewrite. The encoded path may contain
     // either "Other+Page" or "Other%2BPage" depending on encoder.
     expect(result.html).toMatch(/<a [^>]*href="[^"]*display\/DOCS\/(Other\+Page|Other%2BPage)"/);
     // User mention rendered as @label with needs-review marker.
     expect(result.html).toContain('@Jane');
-    // Attachment link href fragment (no localPath provided in test ctx).
-    expect(result.html).toContain('report');
+    // Attachment link → placeholder marker, NOT a local filesystem path.
+    expect(result.html).toContain('[attachment: report.pdf]');
+    expect(result.html).not.toMatch(/C:\\Users/);
+    expect(result.html).not.toContain('AppData');
     // Anchor-only link → href="#section-a".
     expect(result.html).toMatch(/href="#section-a"/);
+    // Attachment placeholder + user mention each bump needsReview.
+    expect(result.needsReview).toBeGreaterThanOrEqual(2);
   });
 });

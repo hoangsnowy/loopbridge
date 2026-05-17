@@ -33,8 +33,9 @@ export function transformLinks($: CheerioAPI, ctx: ConvertContext, state: Conver
       return;
     } else if ($att.length > 0) {
       const filename = $att.attr('ri:filename') ?? '';
-      if (!label) label = filename;
-      href = ctx.attachmentLocalPath?.(filename) ?? '#';
+      $link.replaceWith(`<mark>[attachment: ${escapeText(filename)}]</mark>`);
+      state.needsReview += 1;
+      return;
     } else if (anchor && !$page.length) {
       href = `#${encodeURIComponent(anchor)}`;
     }

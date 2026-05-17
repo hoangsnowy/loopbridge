@@ -153,6 +153,20 @@ export interface RecordEventInput {
   details?: Record<string, unknown>;
 }
 
+const SENSITIVE_KEY_RE =
+  /^(authorization|token|secret|api[-_]?token|password|pat|cookie|x-api-key|set-cookie|access[-_]?token|refresh[-_]?token)$/i;
+
+function redactSensitive(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) return value.map(redactSensitive);
+  if (typeof value !== 'object') return value;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    out[k] = SENSITIVE_KEY_RE.test(k) ? '[REDACTED]' : redactSensitive(v);
+  }
+  return out;
+}
+
 export function recordEvent(input: RecordEventInput): void {
   const d = getAudit();
   d.prepare(
@@ -164,7 +178,7 @@ export function recordEvent(input: RecordEventInput): void {
     new Date().toISOString(),
     input.kind,
     input.outcome,
-    input.details ? JSON.stringify(input.details) : null,
+    input.details ? JSON.stringify(redactSensitive(input.details)) : null,
   );
 }
 
@@ -250,7 +264,7 @@ export function transitionPage(input: TransitionInput): void {
       now,
       i.eventKind,
       i.eventOutcome ?? (i.next === 'error' ? 'error' : 'success'),
-      i.details ? JSON.stringify(i.details) : null,
+      i.details ? JSON.stringify(redactSensitive(i.details)) : null,
     );
   });
   tx(input);

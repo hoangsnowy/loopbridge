@@ -22,7 +22,7 @@ const CloudAuthSchema = z.object({
       return false;
     }
   }, 'Cloud baseUrl host must be atlassian.net'),
-  email: z.string().email(),
+  email: z.string().trim().email(),
 });
 
 export const ConfluenceConfigSchema = z.discriminatedUnion('backend', [
@@ -68,7 +68,6 @@ export const UpdaterConfigSchema = z.object({
 
 export const TelemetryConfigSchema = z.object({
   enabled: z.boolean().default(false),
-  sentryDsn: z.string().url().optional(),
 });
 
 export const AppConfigSchema = z.object({

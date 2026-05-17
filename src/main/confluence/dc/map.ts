@@ -1,10 +1,5 @@
-import type {
-  AttachmentInfo,
-  PageDetail,
-  PageSummary,
-  SpaceInfo,
-  UserInfo,
-} from '@shared/domain';
+import { ClientError } from '@shared/errors';
+import type { AttachmentInfo, PageDetail, PageSummary, SpaceInfo, UserInfo } from '@shared/domain';
 import type {
   DcAttachmentResponse,
   DcContentResponse,
@@ -13,7 +8,12 @@ import type {
 } from './wire';
 
 export function mapDcUser(r: DcUserResponse): UserInfo {
-  const accountId = r.accountId ?? r.userKey ?? r.username ?? r.displayName;
+  const accountId = r.accountId ?? r.userKey ?? r.username;
+  if (!accountId) {
+    throw new ClientError('Confluence user response has no stable identifier', {
+      statusCode: 500,
+    });
+  }
   const out: UserInfo = { accountId, displayName: r.displayName };
   if (r.email) out.email = r.email;
   return out;
@@ -33,7 +33,8 @@ export function mapDcSpace(r: DcSpaceResponse): SpaceInfo {
 export function mapDcPageSummary(r: DcContentResponse, baseUrl: string): PageSummary {
   const spaceKey = r.space?.key ?? '';
   const spaceId = r.space?.id !== undefined ? String(r.space.id) : spaceKey;
-  const parent = r.ancestors && r.ancestors.length > 0 ? r.ancestors[r.ancestors.length - 1] : undefined;
+  const parent =
+    r.ancestors && r.ancestors.length > 0 ? r.ancestors[r.ancestors.length - 1] : undefined;
   const out: PageSummary = {
     id: r.id,
     title: r.title,
@@ -50,7 +51,11 @@ export function mapDcPageSummary(r: DcContentResponse, baseUrl: string): PageSum
   return out;
 }
 
-export function mapDcAttachment(r: DcAttachmentResponse, baseUrl: string, fallbackPageId: string): AttachmentInfo {
+export function mapDcAttachment(
+  r: DcAttachmentResponse,
+  baseUrl: string,
+  fallbackPageId: string,
+): AttachmentInfo {
   const pageId = r.container?.id !== undefined ? String(r.container.id) : fallbackPageId;
   const mediaType = r.metadata?.mediaType ?? r.extensions?.mediaType ?? 'application/octet-stream';
   const sizeBytes = r.extensions?.fileSize ?? 0;

@@ -28,8 +28,8 @@ export async function runPipeline(
   const wrapped = `<root>${inlined}</root>`;
   const $ = cheerio.load(wrapped, { xmlMode: false });
 
-  applyToc($);
-  applyChildren($);
+  applyToc($, ctx, state);
+  applyChildren($, ctx, state);
   applyInfoNoteWarningTip($);
   applyCode($);
   applyExpand($);

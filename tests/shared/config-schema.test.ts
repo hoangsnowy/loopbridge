@@ -67,6 +67,15 @@ describe('config schema', () => {
     ).toThrow();
   });
 
+  it('ConfluenceConfigSchema (Cloud) trims surrounding whitespace from email', () => {
+    const ok = ConfluenceConfigSchema.parse({
+      backend: 'cloud',
+      baseUrl: 'https://acme.atlassian.net',
+      email: '  jane@example.com\n',
+    });
+    expect(ok.backend === 'cloud' && ok.email).toBe('jane@example.com');
+  });
+
   it('NetworkConfigSchema clamps requestTimeoutMs to [1000, 120000]', () => {
     expect(() => NetworkConfigSchema.parse({ requestTimeoutMs: 999 })).toThrow();
     expect(() => NetworkConfigSchema.parse({ requestTimeoutMs: 120_001 })).toThrow();

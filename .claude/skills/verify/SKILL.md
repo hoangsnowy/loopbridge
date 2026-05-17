@@ -15,7 +15,9 @@ Run these in order; stop on first failure.
 npm run lint -- --max-warnings 0
 npm run typecheck
 npm test
+npm run postinstall:electron     # flip better-sqlite3 back to Electron ABI
 npm run build
+npm run test:e2e                 # Playwright + _electron + mock Confluence
 ```
 
 Each must exit 0. If `npm test` errors with `NODE_MODULE_VERSION` mismatch, the `pretest` hook didn't fire — run it manually:
@@ -25,12 +27,14 @@ npm rebuild better-sqlite3 --build-from-source=false
 npm test
 ```
 
+`npm run test:e2e` rebuilds `better-sqlite3` back to Electron ABI as part of its own `pretest:e2e`, so order doesn't matter for it specifically — but skipping it before push leaves IPC/preload regressions to remote CI.
+
 ## After verify
 
-If the change touches the desktop app and you want to smoke-test it:
+If you want to smoke-test the desktop app interactively:
 
 ```bash
-npm run postinstall:electron   # flip better-sqlite3 back to Electron ABI
+npm run postinstall:electron   # only if you just ran npm test (Node ABI)
 npm run dev                    # launch with HMR
 ```
 

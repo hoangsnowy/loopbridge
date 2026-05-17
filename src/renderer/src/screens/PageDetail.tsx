@@ -40,6 +40,16 @@ export function PageDetailScreen() {
     onError: (err) => setError(err),
   });
 
+  const refetchMutation = useMutation({
+    mutationFn: () => api.pages.refetch(pageId!),
+    onSuccess: async () => {
+      setConvertResult(null);
+      await qc.invalidateQueries({ queryKey: ['page', pageId] });
+      await qc.invalidateQueries({ queryKey: ['audit-list'] });
+    },
+    onError: (err) => setError(err),
+  });
+
   if (!pageId) return null;
 
   return (
@@ -72,10 +82,25 @@ export function PageDetailScreen() {
           >
             {copied ? 'Copied!' : copyMutation.isPending ? 'Copying…' : 'Copy to clipboard'}
           </Button>
-          <Button variant="outline" onClick={() => api.shell.openExternal('https://loop.microsoft.com/')}>
+          <Button
+            variant="outline"
+            onClick={() => api.shell.openExternal('https://loop.microsoft.com/')}
+          >
             Open Loop
           </Button>
-          <Button variant="secondary" onClick={() => doneMutation.mutate()} disabled={doneMutation.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => refetchMutation.mutate()}
+            disabled={refetchMutation.isPending}
+            title="Discard local cache and re-download from Confluence"
+          >
+            {refetchMutation.isPending ? 'Refreshing…' : 'Refresh from Confluence'}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => doneMutation.mutate()}
+            disabled={doneMutation.isPending}
+          >
             Mark done
           </Button>
         </div>
@@ -85,16 +110,28 @@ export function PageDetailScreen() {
         <ErrorBanner error={error ?? page.error} onDismiss={() => setError(null)} />
         {convertResult && (
           <div className="mb-4 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground flex gap-4">
-            <span>Needs review: <strong className={convertResult.needsReview > 0 ? 'text-amber-600' : ''}>{convertResult.needsReview}</strong></span>
-            <span>Images embedded: <strong>{convertResult.imagesEmbedded}</strong></span>
-            <span>Images manual: <strong>{convertResult.imagesManual}</strong></span>
+            <span>
+              Needs review:{' '}
+              <strong className={convertResult.needsReview > 0 ? 'text-amber-600' : ''}>
+                {convertResult.needsReview}
+              </strong>
+            </span>
+            <span>
+              Images embedded: <strong>{convertResult.imagesEmbedded}</strong>
+            </span>
+            <span>
+              Images manual: <strong>{convertResult.imagesManual}</strong>
+            </span>
           </div>
         )}
       </div>
 
       <div className="flex-1 overflow-auto px-6 pb-6">
         {convertResult ? (
-          <article className="preview-pane" dangerouslySetInnerHTML={{ __html: convertResult.html }} />
+          <article
+            className="preview-pane"
+            dangerouslySetInnerHTML={{ __html: convertResult.html }}
+          />
         ) : page.data ? (
           <pre className="text-xs whitespace-pre-wrap font-mono text-muted-foreground border border-dashed border-border rounded-md p-3">
             {page.data.bodyStorageXhtml.slice(0, 4000)}

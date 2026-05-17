@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, shell } from 'electron';
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { AppConfigSchema, type AppConfig } from '@shared/config-schema';
@@ -32,10 +32,31 @@ import {
   resetClient,
   userDataDir,
 } from '@main/services/migration-service';
-import { ensureRun, transition } from '@main/services/progress-service';
+import { ensureRun, setStatusEmitter, transition } from '@main/services/progress-service';
 import { checkForUpdates, downloadUpdate, quitAndInstall } from '@main/updater';
 
 const log = () => childLogger({ mod: 'ipc' });
+
+async function readTailUtf8(file: string, maxBytes: number): Promise<string> {
+  const handle = await fs.open(file, 'r');
+  try {
+    const stat = await handle.stat();
+    const size = stat.size;
+    if (size === 0) return '';
+    const chunk = Math.min(size, maxBytes);
+    const buf = Buffer.alloc(chunk);
+    await handle.read(buf, 0, chunk, size - chunk);
+    // Trim a leading partial line when we did not read from the file start.
+    const text = buf.toString('utf8');
+    if (chunk < size) {
+      const nl = text.indexOf('\n');
+      return nl >= 0 ? text.slice(nl + 1) : text;
+    }
+    return text;
+  } finally {
+    await handle.close();
+  }
+}
 
 function buildEphemeralConfig(input: AuthInput): { config: AppConfig; secret: string } {
   const current = getConfig();
@@ -54,21 +75,21 @@ function buildEphemeralConfig(input: AuthInput): { config: AppConfig; secret: st
         ...(input.httpsProxy ? { httpsProxy: input.httpsProxy } : {}),
       },
     };
-    return { config, secret: input.secret };
+    return { config, secret: input.secret.trim() };
   }
   const config: AppConfig = {
     ...current,
     confluence: {
       backend: 'cloud',
       baseUrl: input.baseUrl,
-      email: input.email,
+      email: input.email.trim(),
     },
     network: {
       ...current.network,
       ...(input.httpsProxy ? { httpsProxy: input.httpsProxy } : {}),
     },
   };
-  return { config, secret: input.apiToken };
+  return { config, secret: input.apiToken.trim() };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -85,6 +106,13 @@ function handle<T>(channel: string, fn: (...args: any[]) => Promise<T> | T): voi
 }
 
 export function registerIpc(getWindow: () => BrowserWindow | null): void {
+  setStatusEmitter((s) => {
+    const win = getWindow();
+    if (win && !win.isDestroyed()) {
+      win.webContents.send(IPC.EvtMigrationStatus, s);
+    }
+  });
+
   handle(IPC.ConnectionTest, async (input: AuthInput): Promise<ConnectionResult> => {
     const { config, secret } = buildEphemeralConfig(input);
     const client = createClient({ config, secret });
@@ -233,6 +261,19 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
     });
   });
 
+  handle(IPC.PageRefetch, async (pageId: string): Promise<void> => {
+    if (!/^[A-Za-z0-9_-]+$/.test(pageId)) {
+      throw new ConfigError(`Invalid pageId: ${pageId}`);
+    }
+    const dir = path.join(userDataDir(), 'pages', pageId);
+    await fs.rm(dir, { recursive: true, force: true });
+    transition({
+      pageId,
+      next: 'pending',
+      eventKind: 'refetch',
+    });
+  });
+
   handle(IPC.AttachmentsList, async (pageId: string) => {
     const client = await ensureClient();
     return client.listAttachments(pageId);
@@ -249,6 +290,9 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   });
 
   handle(IPC.AuditExportCsv, async (targetPath: string): Promise<void> => {
+    if (!targetPath.toLowerCase().endsWith('.csv')) {
+      throw new ConfigError('Export path must end with .csv');
+    }
     const rows = listPagesAudit({});
     const { stringify } = await import('csv-stringify/sync');
     // Explicit AuditRow column order — keeps CSV header stable even when
@@ -285,8 +329,13 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   handle(IPC.ConfigGet, async () => getConfig());
 
   handle(IPC.ConfigSet, async (patch: Partial<AppConfig>) => {
-    const merged = AppConfigSchema.parse({ ...getConfig(), ...patch });
-    return setConfig(merged);
+    const before = getConfig();
+    const merged = AppConfigSchema.parse({ ...before, ...patch });
+    const next = setConfig(merged);
+    if (JSON.stringify(before.network) !== JSON.stringify(next.network)) {
+      await resetClient();
+    }
+    return next;
   });
 
   handle(IPC.UpdaterCheck, async () => checkForUpdates());
@@ -296,12 +345,10 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
   handle(IPC.LogsTail, async (lines: number): Promise<LogLine[]> => {
     const file = currentLogFile();
     if (!file) return [];
+    const want = Math.max(1, lines | 0);
     try {
-      const text = await fs.readFile(file, 'utf8');
-      const all = text
-        .trim()
-        .split('\n')
-        .slice(-Math.max(1, lines | 0));
+      const text = await readTailUtf8(file, 64 * 1024);
+      const all = text.trim().split('\n').slice(-want);
       return all
         .map((row) => {
           try {
@@ -315,6 +362,21 @@ export function registerIpc(getWindow: () => BrowserWindow | null): void {
       return [];
     }
   });
+
+  handle(
+    IPC.DialogShowSaveDialog,
+    async (opts: {
+      defaultPath?: string;
+      filters?: Array<{ name: string; extensions: string[] }>;
+      title?: string;
+    }): Promise<string | null> => {
+      const win = getWindow();
+      const result = win
+        ? await dialog.showSaveDialog(win, opts)
+        : await dialog.showSaveDialog(opts);
+      return result.canceled || !result.filePath ? null : result.filePath;
+    },
+  );
 
   handle(IPC.LogsOpenFolder, async (): Promise<void> => {
     const file = currentLogFile();

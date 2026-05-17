@@ -38,7 +38,9 @@ export function SettingsScreen() {
       <ErrorBanner error={error} onDismiss={() => setError(null)} />
 
       <section className="space-y-4">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Migration</h2>
+        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Migration
+        </h2>
         <div className="space-y-2">
           <Label htmlFor="imageStrategy">Image handling</Label>
           <Select
@@ -46,7 +48,10 @@ export function SettingsScreen() {
             value={cfg.migration.imageStrategy}
             onChange={(e) =>
               patch.mutate({
-                migration: { ...cfg.migration, imageStrategy: e.currentTarget.value as 'auto' | 'base64' | 'manual' },
+                migration: {
+                  ...cfg.migration,
+                  imageStrategy: e.currentTarget.value as 'auto' | 'base64' | 'manual',
+                },
               })
             }
           >
@@ -72,7 +77,9 @@ export function SettingsScreen() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Network</h2>
+        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Network
+        </h2>
         <div className="space-y-2">
           <Label htmlFor="caBundlePath">Custom CA bundle path</Label>
           <Input
@@ -102,7 +109,9 @@ export function SettingsScreen() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Updater</h2>
+        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Updater
+        </h2>
         <div className="space-y-2">
           <Label htmlFor="feedUrl">Update feed URL (generic provider)</Label>
           <Input
@@ -119,7 +128,34 @@ export function SettingsScreen() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Account</h2>
+        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Audit</h2>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              setError(null);
+              try {
+                const target = await api.dialog.showSaveDialog({
+                  title: 'Export audit as CSV',
+                  defaultPath: `loopbridge-audit-${new Date().toISOString().slice(0, 10)}.csv`,
+                  filters: [{ name: 'CSV', extensions: ['csv'] }],
+                });
+                if (!target) return;
+                await api.audit.exportCsv(target);
+              } catch (err) {
+                setError(err);
+              }
+            }}
+          >
+            Export audit as CSV
+          </Button>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Account
+        </h2>
         <Button variant="destructive" onClick={() => clear.mutate()}>
           Sign out & clear stored credential
         </Button>

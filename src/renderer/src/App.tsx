@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@renderer/lib/ipc';
 import { SetupScreen } from '@renderer/screens/SetupScreen';
 import { PageListScreen } from '@renderer/screens/PageList';
@@ -9,6 +9,7 @@ import { SettingsScreen } from '@renderer/screens/SettingsScreen';
 import { LogPanelScreen } from '@renderer/screens/LogPanel';
 import { AboutScreen } from '@renderer/screens/About';
 import { cn } from '@renderer/lib/cn';
+import { useMigrationStore } from '@renderer/state/migration-store';
 
 function Sidebar({ identityLabel, baseUrl }: { identityLabel?: string; baseUrl?: string }) {
   const location = useLocation();
@@ -53,6 +54,8 @@ function Sidebar({ identityLabel, baseUrl }: { identityLabel?: string; baseUrl?:
 
 export function App() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const setListingProgress = useMigrationStore((s) => s.setListingProgress);
   const status = useQuery({
     queryKey: ['connection-status'],
     queryFn: () => api.connection.getStatus(),
@@ -63,6 +66,20 @@ export function App() {
       navigate('/setup', { replace: true });
     }
   }, [status.data, navigate]);
+
+  // Subscribe to page-list progress at app scope so it survives screen unmounts.
+  useEffect(() => {
+    return api.on.pagesListProgress((p) => {
+      setListingProgress(p.done ? null : p.fetched);
+    });
+  }, [setListingProgress]);
+
+  // Audit list is invalidated whenever the main process records a transition.
+  useEffect(() => {
+    return api.on.migrationStatus(() => {
+      qc.invalidateQueries({ queryKey: ['audit-list'] });
+    });
+  }, [qc]);
 
   const configured = status.data?.configured === true;
 

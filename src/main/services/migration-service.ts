@@ -15,30 +15,39 @@ import {
   writePageCache,
 } from '@main/store/cache';
 import { childLogger } from '@main/logging/logger';
+import { pLimit } from '@main/net/concurrency';
 import { transition, upsertPageSummary } from './progress-service';
 
 const log = () => childLogger({ mod: 'migration' });
 
-let client: ConfluenceClient | undefined;
+let clientPromise: Promise<ConfluenceClient> | undefined;
 
 export async function ensureClient(): Promise<ConfluenceClient> {
-  if (client) return client;
-  const config = getConfig();
-  if (!config.confluence) throw new ConfigError('Confluence is not configured');
-  const secret = await getSecret(config.confluence.backend, config.confluence.baseUrl);
-  if (!secret) throw new ConfigError('Credential missing — re-run setup');
-  client = createClient({ config, secret });
-  return client;
+  if (clientPromise) return clientPromise;
+  clientPromise = (async () => {
+    const config = getConfig();
+    if (!config.confluence) throw new ConfigError('Confluence is not configured');
+    const secret = await getSecret(config.confluence.backend, config.confluence.baseUrl);
+    if (!secret) throw new ConfigError('Credential missing — re-run setup');
+    return createClient({ config, secret });
+  })();
+  try {
+    return await clientPromise;
+  } catch (err) {
+    clientPromise = undefined;
+    throw err;
+  }
 }
 
 export async function resetClient(): Promise<void> {
-  if (client) {
-    try {
-      await client.close();
-    } catch (err) {
-      log().warn({ err }, 'failed to close client');
-    }
-    client = undefined;
+  const p = clientPromise;
+  clientPromise = undefined;
+  if (!p) return;
+  try {
+    const c = await p;
+    await c.close();
+  } catch (err) {
+    log().warn({ err }, 'failed to close client');
   }
 }
 
@@ -56,16 +65,21 @@ export async function fetchAndCachePage(pageId: string): Promise<void> {
     versionNumber: page.versionNumber,
     ...(page.parentId ? { parentId: page.parentId } : {}),
   });
-  for (const att of page.attachments) {
-    const existing = await readAttachmentBlob(userDataDir(), page.id, att.filename);
-    if (existing) continue;
-    try {
-      const buf = await c.downloadAttachment(att);
-      await writeAttachmentBlob(userDataDir(), page.id, att.filename, buf);
-    } catch (err) {
-      log().warn({ err, filename: att.filename }, 'attachment download failed');
-    }
-  }
+  const limit = pLimit(getConfig().network.maxConcurrentRequests);
+  await Promise.all(
+    page.attachments.map((att) =>
+      limit(async () => {
+        const existing = await readAttachmentBlob(userDataDir(), page.id, att.filename);
+        if (existing) return;
+        try {
+          const buf = await c.downloadAttachment(att);
+          await writeAttachmentBlob(userDataDir(), page.id, att.filename, buf);
+        } catch (err) {
+          log().warn({ err, filename: att.filename }, 'attachment download failed');
+        }
+      }),
+    ),
+  );
   await writePageCache(userDataDir(), {
     pageId: page.id,
     page,

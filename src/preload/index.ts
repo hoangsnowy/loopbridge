@@ -66,10 +66,12 @@ const api = {
     get: (pageId: string): Promise<PageDetail> => invoke(IPC.PageGet, pageId),
     convert: (pageId: string): Promise<ConvertResult> => invoke(IPC.PageConvert, pageId),
     copyToClipboard: (pageId: string): Promise<void> => invoke(IPC.PageCopyToClipboard, pageId),
-    markDone: (pageId: string, note?: string): Promise<void> => invoke(IPC.PageMarkDone, pageId, note),
+    markDone: (pageId: string, note?: string): Promise<void> =>
+      invoke(IPC.PageMarkDone, pageId, note),
     markSkipped: (pageId: string, reason: string): Promise<void> =>
       invoke(IPC.PageMarkSkipped, pageId, reason),
     reset: (pageId: string): Promise<void> => invoke(IPC.PageReset, pageId),
+    refetch: (pageId: string): Promise<void> => invoke(IPC.PageRefetch, pageId),
   },
   attachments: {
     list: (pageId: string): Promise<AttachmentInfo[]> => invoke(IPC.AttachmentsList, pageId),
@@ -97,6 +99,13 @@ const api = {
   shell: {
     openExternal: (url: string): Promise<void> => invoke(IPC.ShellOpenExternal, url),
     showItemInFolder: (target: string): Promise<void> => invoke(IPC.ShellShowItemInFolder, target),
+  },
+  dialog: {
+    showSaveDialog: (opts: {
+      defaultPath?: string;
+      filters?: Array<{ name: string; extensions: string[] }>;
+      title?: string;
+    }): Promise<string | null> => invoke(IPC.DialogShowSaveDialog, opts),
   },
   on: {
     pagesListProgress: (cb: (p: PagesListProgress) => void): Unsubscribe =>

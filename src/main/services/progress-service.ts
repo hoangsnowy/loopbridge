@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import type { ConfluenceBackend } from '@shared/domain';
-import type { PageStatus } from '@shared/types';
+import type { MigrationStatus, PageStatus } from '@shared/types';
 import { ConfigError } from '@shared/errors';
 import {
   endRun as endRunDao,
@@ -14,6 +14,21 @@ import { childLogger } from '@main/logging/logger';
 const log = () => childLogger({ mod: 'progress' });
 
 let currentRunId: number | undefined;
+
+let statusEmitter: ((s: MigrationStatus) => void) | undefined;
+
+export function setStatusEmitter(fn: ((s: MigrationStatus) => void) | undefined): void {
+  statusEmitter = fn;
+}
+
+function emitStatus(s: MigrationStatus): void {
+  if (!statusEmitter) return;
+  try {
+    statusEmitter(s);
+  } catch (err) {
+    log().warn({ err }, 'status emitter threw');
+  }
+}
 
 export async function ensureRun(input: {
   backend: ConfluenceBackend;
@@ -115,6 +130,7 @@ export function transition(input: TransitionInput): void {
   if (input.patch) opts.patch = input.patch;
   if (input.details) opts.details = input.details;
   transitionPageDao(opts);
+  emitStatus({ kind: 'idle', pageId: input.pageId, message: input.next });
 }
 
 export function recordEvent(input: {

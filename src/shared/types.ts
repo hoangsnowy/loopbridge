@@ -56,10 +56,6 @@ export interface PageListOptions {
   cursor?: string;
 }
 
-export interface ConvertOptions {
-  forceRefetch?: boolean;
-}
-
 export interface ConvertResult {
   pageId: string;
   html: string;

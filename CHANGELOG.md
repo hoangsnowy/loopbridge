@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-05-18
+
+Hotfix release. v0.3.0 tag built no artifacts because the release workflow's `npm ci` step failed: `package-lock.json` was missing `conventional-commits-parser@6.4.0` and a chain of optional native deps. No code changes vs v0.3.0.
+
+### Fixed
+
+- **`package-lock.json`** regenerated via `npm install` so the release workflow's `npm ci` step succeeds. v0.3.0 shipped no installer; v0.3.1 supersedes it.
+
 ## [0.3.0] — 2026-05-17
 
 Code review remediation sweep — P0 correctness + privacy, P1 correctness, P2 UX + performance. See PR #10.
@@ -113,7 +121,8 @@ Initial scaffold release.
 - Release pipeline produces NSIS `.exe` + MSI `.msi` installers, CycloneDX SBOM, and SLSA build provenance.
 - SECURITY.md and dependabot configuration.
 
-[Unreleased]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/hoangsnowy/loopbridge/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/hoangsnowy/loopbridge/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/hoangsnowy/loopbridge/releases/tag/v0.1.0

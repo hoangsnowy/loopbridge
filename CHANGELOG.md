@@ -6,12 +6,45 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-05-17
+
+Code review remediation sweep — P0 correctness + privacy, P1 correctness, P2 UX + performance. See PR #10.
+
+### Added
+
+- **`src/main/net/concurrency.ts`** — tiny `pLimit` helper used to cap parallel attachment downloads.
+- **IPC `pages:refetch`** + `api.pages.refetch` + a "Refresh from Confluence" button on `PageDetail`. Deletes the cached page directory and transitions the row back to `pending`.
+- **IPC `dialog:show-save-dialog`** + `api.dialog.showSaveDialog` exposed to the renderer. `SettingsScreen` now uses the native save picker for "Export audit as CSV".
+- **Tests** — `tests/net/concurrency.test.ts`, `tests/store/audit.test.ts` redaction cases, `tests/converter/macros.test.ts` children/toc placeholder + attachment-privacy case, `tests/shared/config-schema.test.ts` email-trim case.
+
+### Changed
+
+- **`converter/links.ts`** — attachment links no longer leak the `userData` absolute path into clipboard HTML. They render as `[attachment: filename]` placeholders and bump `needsReview` instead.
+- **`ipc.ts ConfigSet`** — diffs `before.network` vs `next.network` and calls `resetClient()` on change, so Settings tweaks (`maxConcurrentRequests`, `caBundlePath`, `httpsProxy`, `requestTimeoutMs`) take effect without an app restart.
+- **`buildEphemeralConfig`** trims DC secret + Cloud email + apiToken; `shared/config-schema.ts` trims the Cloud email field at the schema level.
+- **`migration-service.ensureClient`** dedupes via a `clientPromise` so concurrent startup IPC calls (`PagesList` + `ConnectionTest`) cannot double-create the `ConfluenceClient`.
+- **`migration-service.fetchAndCachePage`** downloads attachments in parallel up to `config.network.maxConcurrentRequests` instead of the prior sequential loop.
+- **`audit.recordEvent` + `transitionPage`** run a recursive redactor that strips `Authorization`, `token`, `*-token`, `password`, `cookie`, and `x-api-key` keys before stringifying details into `details_json`.
+- **`AuditExportCsv`** handler rejects target paths that do not end with `.csv`.
+- **`dc/map.mapDcUser`** throws `ClientError` when `accountId` / `userKey` / `username` are all missing instead of silently producing a user with `accountId: undefined`.
+- **`PageList`** virtualized with `@tanstack/react-virtual`, so 5k-row spaces scroll smoothly.
+- **Audit list** is now event-driven — `progress-service.transition()` emits `EvtMigrationStatus` through an emitter registered in `registerIpc`, and `App.tsx` subscribes once and invalidates the `['audit-list']` query. The `refetchInterval` poll is gone.
+- **`ipc.LogsTail`** reverse-reads the last 64 KB via `fs.open` + `fd.read` instead of loading the entire log file just to slice the tail.
+- **`converter/macros/children` + `toc`** emit visible `[Child pages …]` / `[Table of contents …]` review placeholders and bump `state.needsReview` instead of dropping silently.
+- **`migration-store.listingProgress`** lifted to Zustand and subscribed once at `App.tsx` mount, so the progress count survives `PageList` unmount / re-mount during a long listing.
+- **Skills** — `add-ipc`, `add-macro`, `verify` updated to current patterns (event-driven audit invalidation, cheerio-pipeline wire-up file, `test:e2e` in the verify gate).
+
 ### Removed
 
-- **Linux AppImage** dropped from the release pipeline. The `build-linux`
-  job in `release.yml` and the `linux:` block in `electron-builder.yml`
-  are gone; release now ships Windows NSIS + MSI only. Will return when
-  there is a Linux user actively maintaining it.
+- **Linux AppImage** dropped from the release pipeline. The `build-linux` job in `release.yml` and the `linux:` block in `electron-builder.yml` are gone; release now ships Windows NSIS + MSI only. Will return when there is a Linux user actively maintaining it.
+- **`TelemetryConfig.sentryDsn`** — dead field, removed from the schema.
+- **`ConvertOptions.forceRefetch`** — dead field, replaced by the new `pages:refetch` IPC channel.
+
+### Security
+
+- Attachment links no longer expose local cache absolute paths through clipboard HTML.
+- Audit `details_json` entries scrub `Authorization`, bearer/api/refresh tokens, passwords, cookies, and `x-api-key` before persistence.
+- CSV export refuses non-`.csv` target paths.
 
 ## [0.2.0] — 2026-05-16
 
@@ -80,6 +113,7 @@ Initial scaffold release.
 - Release pipeline produces NSIS `.exe` + MSI `.msi` installers, CycloneDX SBOM, and SLSA build provenance.
 - SECURITY.md and dependabot configuration.
 
-[Unreleased]: https://github.com/hoangsnowy/loopbridge/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/hoangsnowy/loopbridge/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/hoangsnowy/loopbridge/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/hoangsnowy/loopbridge/releases/tag/v0.1.0

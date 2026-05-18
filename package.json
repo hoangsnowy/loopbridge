@@ -82,7 +82,7 @@
     "@commitlint/cli": "^19.5.0",
     "@emnapi/core": "^1.10.0",
     "@emnapi/runtime": "^1.10.0",
-    "@commitlint/config-conventional": "^19.5.0",
+    "@commitlint/config-conventional": "^21.0.1",
     "@cyclonedx/cdxgen": "^12.3.3",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",

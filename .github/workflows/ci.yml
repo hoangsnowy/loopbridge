@@ -23,6 +23,9 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
+      - name: Pin npm to match the version the lockfile was generated with
+        run: npm install -g npm@11.6.2
+
       - name: Install dependencies (no native compile)
         # --ignore-scripts skips the postinstall Electron rebuild; tests
         # run against stock Node and rely on `pretest` to rebuild

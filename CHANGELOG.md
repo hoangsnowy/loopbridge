@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-05-18
+
+Third hotfix. v0.3.2 release still failed `npm ci` on `conventional-commits-parser@6.4.0`. Root cause: the lockfile is generated on a host running npm 11.x but CI's `actions/setup-node` brings npm 10.x bundled with Node 22, and the two versions hoist transitive `release-it` deps differently. Pin npm to 11.6.2 in both CI workflows so the install matches the lockfile. No code changes vs v0.3.0.
+
+### Fixed
+
+- **`.github/workflows/release.yml` + `.github/workflows/ci.yml`** install `npm@11.6.2` globally after `setup-node`, so `npm ci` resolves the lockfile the same way the dev host does.
+
 ## [0.3.2] — 2026-05-18
 
 Second hotfix. v0.3.1 release also failed because pinning `package-lock.json` alone was not enough: modern npm (10.5+) leaves `@emnapi/core` and `@emnapi/runtime` out of the installed tree when they are only reachable as optional peer dependencies of `@napi-rs/wasm-runtime` (transitive via `@tailwindcss/oxide-wasm32-wasi`), so `npm ci` keeps failing with `Missing: @emnapi/core@1.10.0 from lock file`. No code changes vs v0.3.0.
@@ -129,7 +137,8 @@ Initial scaffold release.
 - Release pipeline produces NSIS `.exe` + MSI `.msi` installers, CycloneDX SBOM, and SLSA build provenance.
 - SECURITY.md and dependabot configuration.
 
-[Unreleased]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/hoangsnowy/loopbridge/compare/v0.2.0...v0.3.0

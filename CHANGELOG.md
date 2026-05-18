@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-05-18
+
+Second hotfix. v0.3.1 release also failed because pinning `package-lock.json` alone was not enough: modern npm (10.5+) leaves `@emnapi/core` and `@emnapi/runtime` out of the installed tree when they are only reachable as optional peer dependencies of `@napi-rs/wasm-runtime` (transitive via `@tailwindcss/oxide-wasm32-wasi`), so `npm ci` keeps failing with `Missing: @emnapi/core@1.10.0 from lock file`. No code changes vs v0.3.0.
+
+### Fixed
+
+- **`@emnapi/core` + `@emnapi/runtime`** pinned as direct `devDependencies` so they land in `node_modules` and the release workflow's `npm ci` step finally succeeds.
+
 ## [0.3.1] — 2026-05-18
 
 Hotfix release. v0.3.0 tag built no artifacts because the release workflow's `npm ci` step failed: `package-lock.json` was missing `conventional-commits-parser@6.4.0` and a chain of optional native deps. No code changes vs v0.3.0.
@@ -121,7 +129,8 @@ Initial scaffold release.
 - Release pipeline produces NSIS `.exe` + MSI `.msi` installers, CycloneDX SBOM, and SLSA build provenance.
 - SECURITY.md and dependabot configuration.
 
-[Unreleased]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/hoangsnowy/loopbridge/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/hoangsnowy/loopbridge/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/hoangsnowy/loopbridge/compare/v0.1.0...v0.2.0

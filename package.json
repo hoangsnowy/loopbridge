@@ -1,6 +1,6 @@
 {
   "name": "loopbridge",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Desktop tool to migrate Confluence pages to Microsoft Loop via clipboard-assisted paste.",
   "main": "./out/main/index.js",
   "license": "MIT",

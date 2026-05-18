@@ -105,6 +105,17 @@ For multi-line bodies, prefer reasoning over restating the diff.
 4. Expose it on the preload bridge in `src/preload/index.ts`.
 5. Consume it from React via TanStack Query (see existing hooks under `src/renderer/hooks/`).
 
+## Dependency changes
+
+`v0.3.0`, `v0.3.1`, and `v0.3.2` each shipped as ghost tags because `package-lock.json` drifted out of sync with `package.json` and the release workflow's `npm ci` step bailed. To keep that from recurring:
+
+- **Always use `npm install`** when adding or removing a dep — never edit `package.json` by hand without running it. Avoid `npm install <pkg> --no-save`; commit both files together.
+- **Use the pinned npm version.** CI runs `npm@11.6.2` (see `release.yml` + `ci.yml`). If your local npm differs significantly the lockfile may resolve differently. Match it with `npm install -g npm@11.6.2`.
+- **Verify locally before pushing.** `npm ci --ignore-scripts --dry-run` must succeed against the committed lockfile.
+- **The Husky `pre-commit` hook** rejects commits that stage `package.json` without also staging `package-lock.json`.
+- **CI runs a `lockfile-check` job** on every PR that re-resolves the lock from `package.json` and fails if there is any diff. PRs cannot merge with a stale lock.
+- **Optional WASM peer deps** (e.g. `@emnapi/core`, `@emnapi/runtime`) sometimes need to be pinned as direct devDependencies to satisfy `npm ci` strict mode — see the v0.3.2 fix.
+
 ## Security-sensitive changes
 
 If your change touches: auth flow, secret storage, IPC surface, network egress, CSP, or sandbox flags, flag the PR with a `security` label and request review. See [SECURITY.md](../SECURITY.md) for the vulnerability disclosure process.

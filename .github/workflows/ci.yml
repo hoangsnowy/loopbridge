@@ -7,6 +7,33 @@ on:
     branches: [main]
 
 jobs:
+  lockfile-check:
+    name: lockfile in sync with package.json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Pin npm to match the version the lockfile was generated with
+        run: npm install -g npm@11.6.2
+
+      - name: Re-resolve lockfile from package.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Fail if lockfile drifted
+        run: |
+          if ! git diff --exit-code package-lock.json; then
+            echo "::error::package-lock.json is out of sync with package.json. Run 'npm install' locally and commit the updated lockfile."
+            exit 1
+          fi
+
+      - name: Sanity-check npm ci against the committed lockfile
+        run: npm ci --ignore-scripts --dry-run
+
   test:
     name: typecheck + test + build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

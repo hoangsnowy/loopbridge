@@ -115,6 +115,19 @@ For multi-line bodies, prefer reasoning over restating the diff.
 - **The Husky `pre-commit` hook** rejects commits that stage `package.json` without also staging `package-lock.json`.
 - **CI runs a `lockfile-check` job** on every PR that re-resolves the lock from `package.json` and fails if there is any diff. PRs cannot merge with a stale lock.
 - **Optional WASM peer deps** (e.g. `@emnapi/core`, `@emnapi/runtime`) sometimes need to be pinned as direct devDependencies to satisfy `npm ci` strict mode — see the v0.3.2 fix.
+- **Windows devs: regenerate the lockfile in a Linux container.** `npm install` on Windows produces a lockfile that drifts from what CI ubuntu generates, even with the same pinned `npm@11.6.2`. Two known divergences:
+  - Windows npm strips the `@tailwindcss/oxide-wasm32-wasi` bundled-dep subtree.
+  - Windows npm omits the `"peer": true` marker on `@emnapi/core` and `@emnapi/runtime`.
+
+  After editing `package.json`, regenerate the lockfile inside the same image CI uses:
+
+  ```bash
+  docker run --rm -v "$PWD:/app" -w /app node:22.22.1-bookworm bash -c \
+    "npm install -g npm@11.6.2 >/dev/null && \
+     npm install --package-lock-only --ignore-scripts --no-audit --no-fund"
+  ```
+
+  Then run `npm install` locally as usual so your `node_modules` stays warm. Only the lockfile from the container needs to be committed.
 
 ## Security-sensitive changes
 

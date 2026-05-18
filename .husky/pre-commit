@@ -1,2 +1,16 @@
 #!/usr/bin/env sh
+
+# Block commits that touch package.json without also touching package-lock.json
+# (or vice versa). v0.3.0–v0.3.2 each shipped a broken release because a dep
+# change landed without a regenerated lockfile.
+staged="$(git diff --cached --name-only)"
+pkg_changed=$(printf '%s\n' "$staged" | grep -E '^package\.json$' || true)
+lock_changed=$(printf '%s\n' "$staged" | grep -E '^package-lock\.json$' || true)
+
+if [ -n "$pkg_changed" ] && [ -z "$lock_changed" ]; then
+  echo "✖ package.json is staged but package-lock.json is not."
+  echo "  Run 'npm install' and 'git add package-lock.json' before committing."
+  exit 1
+fi
+
 npx --no -- lint-staged

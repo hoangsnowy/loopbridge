@@ -7,3 +7,9 @@
 /electron-builder.yml        @hoangsnowy
 /.github/                    @hoangsnowy
 /SECURITY.md                 @hoangsnowy
+
+# Dependency changes — any tweak here can break CI's `npm ci` (see v0.3.0
+# release post-mortem in RELEASE.md). Require explicit review.
+/package.json                @hoangsnowy
+/package-lock.json           @hoangsnowy
+/.nvmrc                      @hoangsnowy

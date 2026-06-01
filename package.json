@@ -98,7 +98,7 @@
     "@types/turndown": "^5.0.6",
     "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.7",
     "autoprefixer": "^10.5.0",
     "electron": "^41.6.1",
@@ -117,8 +117,8 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.4",
-    "vite": "^7.0.0",
-    "vitest": "^4.1.7"
+    "vite": "^8.0.15",
+    "vitest": "^4.1.8"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
